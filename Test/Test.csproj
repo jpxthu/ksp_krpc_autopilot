@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CsLibs\CsLibs.csproj" />
+    <ProjectReference Include="..\CsSamples\CsSamples.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Google.Protobuf">
+      <HintPath>..\external\kRPC\Google.Protobuf.dll</HintPath>
+    </Reference>
+    <Reference Include="KRPC.Client">
+      <HintPath>..\external\krpc-csharp-0.4.8\net45\KRPC.Client.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

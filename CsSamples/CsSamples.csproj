@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CsLibs\CsLibs.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="KRPC.Client">
+      <HintPath>..\external\krpc-csharp-0.4.8\net45\KRPC.Client.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
