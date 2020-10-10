@@ -1,8 +1,8 @@
 ﻿using KRPC.Client;
-using KRPCLibs.Math;
+using KrpcLibs.Math;
 using System;
 
-namespace KRPCLibs.Data
+namespace KrpcLibs.Data
 {
     public class VesselStreams
     {

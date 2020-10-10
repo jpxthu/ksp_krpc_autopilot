@@ -1,6 +1,6 @@
-﻿using KRPCLibs.Math;
+﻿using KrpcLibs.Math;
 
-namespace KRPCLibs.Data
+namespace KrpcLibs.Data
 {
     public class Body
     {

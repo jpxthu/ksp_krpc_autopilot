@@ -1,4 +1,4 @@
-﻿namespace KRPCLibs.Utils
+﻿namespace KrpcLibs.Utils
 {
     static class Common
     {

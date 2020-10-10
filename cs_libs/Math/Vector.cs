@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace KRPCLibs.Math
+namespace KrpcLibs.Math
 {
     public class Vector3d
     {
@@ -40,6 +40,10 @@ namespace KRPCLibs.Math
         public double LengthSquared()
         {
             return X * X + Y * Y + Z * Z;
+        }
+        public Vector3d Norm()
+        {
+            return new Vector3d(X, Y, Z) / Length();
         }
         public static Vector3d operator +(Vector3d left, Vector3d right)
         {

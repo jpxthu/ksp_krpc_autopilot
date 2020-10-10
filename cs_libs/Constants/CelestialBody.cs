@@ -1,4 +1,4 @@
-﻿namespace KRPCLibs.Constants
+﻿namespace KrpcLibs.Constants
 {
     class CelestialBody
     {

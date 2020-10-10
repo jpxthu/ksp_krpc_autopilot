@@ -1,6 +1,6 @@
-﻿using KRPCLibs.Math;
+﻿using KrpcLibs.Math;
 
-namespace KRPCLibs.Utils
+namespace KrpcLibs.Utils
 {
     public class Trajectory
     {

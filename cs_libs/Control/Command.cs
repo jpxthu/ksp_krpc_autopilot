@@ -1,8 +1,8 @@
 ﻿using KRPC.Client.Services.SpaceCenter;
-using KRPCLibs.Math;
+using KrpcLibs.Math;
 using System;
 
-namespace KRPCLibs
+namespace KrpcLibs
 {
     class Command
     {

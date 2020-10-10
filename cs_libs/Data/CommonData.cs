@@ -1,7 +1,7 @@
 ﻿using KRPC.Client;
 using KRPC.Client.Services.SpaceCenter;
 
-namespace KRPCLibs.Data
+namespace KrpcLibs.Data
 {
     public class CommonStreams
     {
