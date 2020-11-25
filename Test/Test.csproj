@@ -6,13 +6,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.6.1" />
-    <PackageReference Include="KRPC.Client" Version="0.4.8" />
+    <ProjectReference Include="..\cs_libs\cs_libs.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\cs_libs\cs_libs.csproj" />
-    <ProjectReference Include="..\Libs\KRPCLibs.csproj" />
+    <Reference Include="Google.Protobuf">
+      <HintPath>E:\Steam\steamapps\common\Kerbal Space Program\GameData\kRPC\Google.Protobuf.dll</HintPath>
+    </Reference>
+    <Reference Include="KRPC.Client">
+      <HintPath>..\..\..\ksp_auto_pilot\external\krpc-csharp-0.4.8\net45\KRPC.Client.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

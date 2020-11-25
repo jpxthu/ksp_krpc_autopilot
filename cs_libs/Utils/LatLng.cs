@@ -1,4 +1,4 @@
-﻿namespace KrpcLibs.Math
+﻿namespace KrpcAutoPilot.Utils
 {
     public class LatLng
     {

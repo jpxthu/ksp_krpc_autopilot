@@ -1,4 +1,4 @@
-﻿namespace KrpcLibs.Constants
+﻿namespace KrpcAutoPilot.Constants
 {
     class CelestialBody
     {

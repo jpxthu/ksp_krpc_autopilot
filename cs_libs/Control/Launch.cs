@@ -1,6 +1,6 @@
 ﻿using KRPC.Client.Services.SpaceCenter;
 
-namespace KrpcLibs
+namespace KrpcAutoPilot
 {
     public partial class Control
     {

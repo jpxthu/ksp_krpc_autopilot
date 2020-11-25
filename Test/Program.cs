@@ -2,10 +2,11 @@
 using KRPC.Client.Services.Drawing;
 using KRPC.Client.Services.SpaceCenter;
 using KRPC.Schema.KRPC;
-using KrpcLibs.Math;
+using KrpcAutoPilot.Utils;
 using System;
 using System.IO;
 using System.Net;
+using System.Reflection.Metadata;
 using System.Threading;
 
 namespace Test
@@ -25,67 +26,43 @@ namespace Test
             var orbit = vessel.Orbit;
             var body = orbit.Body;
 
-            KrpcLibs.Data.CommonData data = new KrpcLibs.Data.CommonData(conn, sc);
+            KrpcAutoPilot.Data.CommonData data = new KrpcAutoPilot.Data.CommonData(conn, sc);
 
-            KrpcLibs.Control control = new KrpcLibs.Control(conn, data, vessel);
+            KrpcAutoPilot.Control control = new KrpcAutoPilot.Control(conn, sc, data, vessel);
 
-            var flight = vessel.Flight(body.ReferenceFrame);
             var auto_pilot = vessel.AutoPilot;
 
-            control.Engage();
-            auto_pilot.Engage();
-            auto_pilot.TargetPitch = 90f;
-            vessel.Control.RCS = true;
-
-            double tar_height = /*flight.MeanAltitude*/ +110d;
-            double max_rcs_thrust = vessel.Parts.RCS[0].MaxThrust * 6;
-
-            while (true)
+            while(true)
             {
-                double max_thrust = vessel.MaxThrust;
-                double mass = vessel.Mass;
-                double height = flight.MeanAltitude;
-                Vector3d up = new Vector3d(vessel.Position(body.ReferenceFrame)).Norm();
-                Vector3d vel = new Vector3d(vessel.Velocity(body.ReferenceFrame));
-                double vel_up = vel * up;
-                double tar_vel = Math.Clamp(tar_height - height, -1000d, 1000d);
-                double tar_acc = (tar_vel - vel_up) * 2;
-                double tar_thrust = mass * (body.SurfaceGravity + tar_acc);
-                vessel.Control.Throttle = Math.Clamp(Convert.ToSingle(tar_thrust / max_thrust), 0f, 1f);
-
-                Vector3d tar_pos_h = new Vector3d(body.PositionAtAltitude(
-                    KrpcLibs.Constants.Position.KERBAL_CENTER_LAUNCH_PAD_NORTH_GEO.Lat,
-                    KrpcLibs.Constants.Position.KERBAL_CENTER_LAUNCH_PAD_NORTH_GEO.Lng,
-                    //-(0.0 + (5.0 / 60.0) + (48.38 / 60.0 / 60.0)),
-                    //-(74.0 + (37.0 / 60.0) + (12.2 / 60.0 / 60.0)),
-                    tar_height, vessel.ReferenceFrame));
-                Vector3d tar_vel_h = Math.Sqrt(2d * max_rcs_thrust / mass * 0.8 * tar_pos_h.Length()) * tar_pos_h.Norm();
-                Vector3d vel_h = new Vector3d(sc.TransformDirection(vessel.Flight(body.ReferenceFrame).Velocity, body.ReferenceFrame, vessel.ReferenceFrame));
-                Vector3d tar_acc_h = (tar_vel_h - vel_h) * 2d;
-
-                vessel.Control.Right = Math.Clamp(Convert.ToSingle(tar_acc_h.X * mass / max_rcs_thrust), -1f, 1f);
-                vessel.Control.Up = Math.Clamp(-Convert.ToSingle(tar_acc_h.Z * mass / max_rcs_thrust), -1f, 1f);
-
-                var res = vessel.Flight(body.ReferenceFrame).SimulateAerodynamicForceAt(
-                    body,
-                    new Tuple<double, double, double>(0, 0, 0),
-                    new Tuple<double, double, double>(up.X, up.Y, up.Z));
-                Console.WriteLine("{0}\t{1}\t{2}\t{3}",
-                    //Convert.ToInt32(res.Item1),
-                    //Convert.ToInt32(res.Item2),
-                    //Convert.ToInt32(res.Item3));
-                    tar_pos_h.X,
-                    tar_pos_h.Z,
-                    vel_h.X,
-                    vel_h.Z);
+                Console.WriteLine("{0:0.0}",
+                    vessel.AvailableThrust);
                 Thread.Sleep(100);
             }
 
+            control.Engage();
+            auto_pilot.Engage();
+            vessel.Control.RCS = true;
+
+            double tar_height = 20d;
+            //double tar_height = 210d;
+            Vector3d tar_pos = new Vector3d(body.PositionAtAltitude(
+                //KrpcLibs.Constants.Position.KERBAL_CENTER_LAUNCH_PAD_NORTH.Lat,
+                //KrpcLibs.Constants.Position.KERBAL_CENTER_LAUNCH_PAD_NORTH.Lng,
+                //KrpcAutoPilot.Constants.Position.VAB_TOP_WEST.Lat,
+                //KrpcAutoPilot.Constants.Position.VAB_TOP_WEST.Lng,
+                KrpcAutoPilot.Constants.Position.KERBAL_SEA_LANDING_OFCOUSE_I_LOVE_U.Lat,
+                KrpcAutoPilot.Constants.Position.KERBAL_SEA_LANDING_OFCOUSE_I_LOVE_U.Lng,
+                tar_height, body.ReferenceFrame));
+
+            Console.WriteLine("Landing init");
+            control.LandingInit(tar_height);
+
+            Console.WriteLine("Adjust landing position");
             while (true)
             {
                 data.Update();
                 control.UpdateData();
-                if (control.LaunchIntoApoapsis(80000))
+                if (control.AdjustLandingPosition(tar_pos))
                 {
                     break;
                 }
@@ -93,16 +70,11 @@ namespace Test
                 Thread.Sleep(100);
             }
 
-            control.LaunchIntoPeriapsisInit();
-
             while (true)
             {
                 data.Update();
                 control.UpdateData();
-                if (control.LaunchIntoPeriapsis(80000))
-                {
-                    break;
-                }
+                control.Landing1(tar_pos, tar_height);
                 control.Execute();
                 Thread.Sleep(100);
             }

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace KrpcLibs.Plannet
+namespace KrpcAutoPilot.Plannet
 {
     class Kerbin
     {

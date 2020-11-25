@@ -1,7 +1,7 @@
 ﻿using KRPC.Client;
 using KRPC.Client.Services.SpaceCenter;
 
-namespace KrpcLibs.Data
+namespace KrpcAutoPilot.Data
 {
     public class CommonStreams
     {
@@ -19,14 +19,20 @@ namespace KrpcLibs.Data
         {
             Streams = new CommonStreams(conn, space_center);
             UT = 0.0;
+            Available = false;
         }
 
         public void Update()
         {
             UT = Streams.UT.Get();
+            Available = true;
         }
 
         private CommonStreams Streams { get; }
+        /// <summary>
+        /// The current universal time in seconds.
+        /// </summary>
         public double UT { get; private set; }
+        public bool Available { get; private set; }
     }
 }
