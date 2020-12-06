@@ -4,7 +4,7 @@ namespace KrpcAutoPilot.Utils
 {
     public class Vector3d
     {
-        private double[] v_ = new double[3];
+        private readonly double[] v_ = new double[3];
 
         public double X
         {
@@ -117,6 +117,28 @@ namespace KrpcAutoPilot.Utils
             string format_str = "{0:" + format + "}\t{1:" + format + "}\t{2:" + format + "}";
             return string.Format(format_str, X, Y, Z);
         }
+        public Vector3d Abs()
+        {
+            return new Vector3d(Math.Abs(X), Math.Abs(Y), Math.Abs(Z));
+        }
+        public double Max()
+        {
+            return Math.Max(X, Math.Max(Y, Z));
+        }
+        public double Min()
+        {
+            return Math.Min(X, Math.Min(Y, Z));
+        }
+        public void SelectMax(double v)
+        {
+            for (int i = 0; i < 3; i++)
+                v_[i] = Math.Max(v_[i], v);
+        }
+        public void SelectMin(double v)
+        {
+            for (int i = 0; i < 3; i++)
+                v_[i] = Math.Min(v_[i], v);
+        }
         public static Vector3d operator +(Vector3d left, Vector3d right)
         {
             return new Vector3d(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
@@ -160,6 +182,60 @@ namespace KrpcAutoPilot.Utils
         public static bool operator !=(Vector3d left, Vector3d right)
         {
             return left.X != right.X || left.Y != right.Y || left.Z != right.Z;
+        }
+        public override bool Equals(object obj)
+        {
+            return obj is object && Equals(obj as Vector3d);
+        }
+        public bool Equals(Vector3d v)
+        {
+            return X == v.X && Y == v.Y && Z == v.Z;
+        }
+        public override int GetHashCode()
+        {
+            return X.GetHashCode() ^ Y.GetHashCode() ^ Z.GetHashCode();
+        }
+    }
+    public class TupleV3d
+    {
+        public Vector3d Item1 { get; private set; }
+        public Vector3d Item2 { get; private set; }
+        public TupleV3d(Tuple<Tuple<double, double, double>, Tuple<double, double, double>> t)
+        {
+            Item1 = new Vector3d(t.Item1);
+            Item2 = new Vector3d(t.Item2);
+        }
+        public TupleV3d(Vector3d item1, Vector3d item2)
+        {
+            Item1 = new Vector3d(item1);
+            Item2 = new Vector3d(item2);
+        }
+        public Tuple<Tuple<double, double, double>, Tuple<double, double, double>> ToTuple()
+        {
+            return new Tuple<Tuple<double, double, double>, Tuple<double, double, double>>(
+                Item1.ToTuple(), Item2.ToTuple());
+        }
+        public TupleV3d Abs()
+        {
+            return new TupleV3d(Item1.Abs(), Item2.Abs());
+        }
+        public double Max()
+        {
+            return Math.Max(Item1.Max(), Item2.Max());
+        }
+        public double Min()
+        {
+            return Math.Min(Item1.Min(), Item2.Min());
+        }
+        public void SelectMax(double v)
+        {
+            Item1.SelectMax(v);
+            Item2.SelectMax(v);
+        }
+        public void SelectMin(double v)
+        {
+            Item1.SelectMin(v);
+            Item2.SelectMin(v);
         }
     }
 }

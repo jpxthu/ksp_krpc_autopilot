@@ -1,19 +1,15 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CsSamples\CsSamples.csproj" />
     <ProjectReference Include="..\cs_libs\cs_libs.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Google.Protobuf">
-      <HintPath>E:\Steam\steamapps\common\Kerbal Space Program\GameData\kRPC\Google.Protobuf.dll</HintPath>
-    </Reference>
     <Reference Include="KRPC.Client">
       <HintPath>..\external\krpc-csharp-0.4.8\net45\KRPC.Client.dll</HintPath>
     </Reference>

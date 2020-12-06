@@ -1,12 +1,10 @@
-﻿using KRPC.Client;
-using KRPC.Client.Services.Drawing;
+﻿using CsSamples;
+using KRPC.Client;
+using KRPC.Client.Services.KRPC;
 using KRPC.Client.Services.SpaceCenter;
-using KRPC.Schema.KRPC;
 using KrpcAutoPilot.Utils;
-using System;
-using System.IO;
+using System.Linq;
 using System.Net;
-using System.Reflection.Metadata;
 using System.Threading;
 
 namespace Test
@@ -15,72 +13,99 @@ namespace Test
     {
         static void Main(string[] args)
         {
-            var conn = new Connection(
+            Connection conn = new Connection(
                 name: "My Example Program",
                 address: IPAddress.Parse("127.0.0.1"),
                 rpcPort: 50000,
                 streamPort: 50001);
 
             var sc = conn.SpaceCenter();
-            var vessel = sc.ActiveVessel;
-            var orbit = vessel.Orbit;
-            var body = orbit.Body;
-
+            Vessel vessel = sc.ActiveVessel;
+            Orbit orbit = vessel.Orbit;
+            CelestialBody body = orbit.Body;
             KrpcAutoPilot.Data.CommonData data = new KrpcAutoPilot.Data.CommonData(conn, sc);
 
-            KrpcAutoPilot.Control control = new KrpcAutoPilot.Control(conn, sc, data, vessel);
-
-            var auto_pilot = vessel.AutoPilot;
-
-            while(true)
+            bool should_exit = false;
+            Thread thread_main = new Thread(() =>
             {
-                Console.WriteLine("{0:0.0}",
-                    vessel.AvailableThrust);
-                Thread.Sleep(100);
-            }
-
-            control.Engage();
-            auto_pilot.Engage();
-            vessel.Control.RCS = true;
-
-            double tar_height = 20d;
-            //double tar_height = 210d;
-            Vector3d tar_pos = new Vector3d(body.PositionAtAltitude(
-                //KrpcLibs.Constants.Position.KERBAL_CENTER_LAUNCH_PAD_NORTH.Lat,
-                //KrpcLibs.Constants.Position.KERBAL_CENTER_LAUNCH_PAD_NORTH.Lng,
-                //KrpcAutoPilot.Constants.Position.VAB_TOP_WEST.Lat,
-                //KrpcAutoPilot.Constants.Position.VAB_TOP_WEST.Lng,
-                KrpcAutoPilot.Constants.Position.KERBAL_SEA_LANDING_OFCOUSE_I_LOVE_U.Lat,
-                KrpcAutoPilot.Constants.Position.KERBAL_SEA_LANDING_OFCOUSE_I_LOVE_U.Lng,
-                tar_height, body.ReferenceFrame));
-
-            Console.WriteLine("Landing init");
-            control.LandingInit(tar_height);
-
-            Console.WriteLine("Adjust landing position");
-            while (true)
-            {
-                data.Update();
-                control.UpdateData();
-                if (control.AdjustLandingPosition(tar_pos))
+                while (!should_exit)
                 {
-                    break;
+                    data.Update();
+                    Thread.Sleep(100);
                 }
-                control.Execute();
-                Thread.Sleep(100);
-            }
+            });
+            thread_main.Start();
 
-            while (true)
-            {
-                data.Update();
-                control.UpdateData();
-                control.Landing1(tar_pos, tar_height);
-                control.Execute();
-                Thread.Sleep(100);
-            }
+            /*Thread hover_thread = new Thread(() => VesselControl.Hover(
+                conn, sc, vessel, data, 150d));
+            hover_thread.Start();
+            hover_thread.Join();*/
 
-            vessel.Control.Throttle = 0;
-            control.DisEngage();
+            // Parts
+            Engine engine_main = vessel.Parts.Engines.Where(p => p.Part.Tag == "engine_main").ToList().First();
+            Engine engine_north = vessel.Parts.Engines.Where(p => p.Part.Tag == "engine_north").ToList().First();
+            Engine engine_south = vessel.Parts.Engines.Where(p => p.Part.Tag == "engine_south").ToList().First();
+            Part tank_north = vessel.Parts.WithTag("tank_north").ToList().First();
+            Part tank_south = vessel.Parts.WithTag("tank_south").ToList().First();
+            
+            // Launch
+            engine_main.ThrustLimit = 0.6f;
+            //engine_main.GimbalLimit = 0.2f;
+            //engine_north.GimbalLimit = 0.2f;
+            //engine_south.GimbalLimit = 0.2f;
+            Thread launch_thread = new Thread(() => VesselControl.Launch(conn, sc, vessel, data, 80000));
+            launch_thread.Start();
+
+            // Splite
+            float north_fuel_throshold = 3000f;// tank_south.Resources.Max("LiquidFuel");
+            var north_fuel = Connection.GetCall(() => tank_south.Resources.Amount("LiquidFuel"));
+            var north_split_expr = Expression.LessThan(conn,
+                Expression.Call(conn, north_fuel),
+                Expression.ConstantFloat(conn, north_fuel_throshold));
+            var north_split_event = conn.KRPC().AddEvent(north_split_expr);
+            lock (north_split_event.Condition)
+                north_split_event.Wait();
+            vessel.Control.ActivateNextStage();
+
+            Vessel vessel_north = engine_north.Part.Vessel;
+            Vessel vessel_south = engine_south.Part.Vessel;
+            sc.ActiveVessel = vessel_south;
+            vessel_north.Control.Throttle = 0.1f;
+            vessel_north.Control.RCS = true;
+            vessel_north.Control.Right = -1f;
+            vessel_south.Control.Throttle = 0.1f;
+            vessel_south.Control.RCS = true;
+            vessel_south.Control.Right = -1f;
+            Thread.Sleep(500);
+            vessel_north.Control.Throttle = 0f;
+            vessel_north.Control.Right = 0f;
+            vessel_south.Control.Throttle = 0f;
+            vessel_south.Control.Right = 0f;
+            engine_north.GimbalLimit = 1f;
+            engine_south.GimbalLimit = 1f;
+
+            // Recycle
+            double tar_altitude = 205d;
+            Thread recycle_north_thread = new Thread(() => VesselControl.Recycle(
+                conn, sc, vessel_north, KrpcAutoPilot.Control.RcsLayout.TOP, data,
+                new Vector3d(body.PositionAtAltitude(
+                    KrpcAutoPilot.Constants.Position.VAB_TOP_EAST.Lat,
+                    KrpcAutoPilot.Constants.Position.VAB_TOP_EAST.Lng,
+                    tar_altitude, body.ReferenceFrame)),
+                tar_altitude));
+            recycle_north_thread.Start();
+            Thread recycle_south_thread = new Thread(() => VesselControl.Recycle(
+                conn, sc, vessel_south, KrpcAutoPilot.Control.RcsLayout.TOP, data,
+                new Vector3d(body.PositionAtAltitude(
+                    KrpcAutoPilot.Constants.Position.VAB_TOP_WEST.Lat,
+                    KrpcAutoPilot.Constants.Position.VAB_TOP_WEST.Lng,
+                    tar_altitude, body.ReferenceFrame)),
+                tar_altitude));
+            recycle_south_thread.Start();
+
+            recycle_north_thread.Join();
+            recycle_south_thread.Join();
+            should_exit = true;
 
             conn.Dispose();
         }

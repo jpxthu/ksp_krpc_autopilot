@@ -11,8 +11,16 @@ namespace KrpcAutoPilot
             Command.Engage();
         }
 
-        public void DisEngage()
+        public void DisEngage(bool reset = true)
         {
+            if(reset)
+            {
+                Command.SetRcsForward(0d);
+                Command.SetRcsRight(0d);
+                Command.SetRcsUp(0d);
+                Command.SetThrottle(0d);
+                Command.Execute();
+            }
             Command.DisEngage();
         }
 
@@ -38,7 +46,7 @@ namespace KrpcAutoPilot
             SpaceCenter = conn.SpaceCenter();
             Data = data;
             State = new Data.VesselData(conn, sc, vessel);
-            Command = new Command(sc, vessel);
+            Command = new Command(vessel);
             Trajectory = new Trajectory(
                 data, State,
                 conn, SpaceCenter, OrbitBody, vessel, 0.0, 100,
@@ -53,6 +61,6 @@ namespace KrpcAutoPilot
         private Data.CommonData Data { get; }
         private Data.VesselData State { get; }
         private Command Command { get; }
-        private Trajectory Trajectory { get; }
+        public Trajectory Trajectory { get; }
     }
 }

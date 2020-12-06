@@ -16,7 +16,7 @@ namespace KrpcAutoPilot.Utils
             public double pressure;
             public double g;
             public double mass;
-            public double tar_height;
+            public double tar_altitude;
             public double fuel_rate_at_full_throttle;
             public double available_thrust;
             public double t;
@@ -51,7 +51,7 @@ namespace KrpcAutoPilot.Utils
             Vector3d vel = State.Vessel.Velocity;
             Vector3d pos = State.Vessel.Position;
             double altitude = pos.Length() - State.Body.Radius;
-            if (altitude <= TarHeight)
+            if (altitude <= TarAltitude)
                 return pos;
 
             double atm_depth = State.Body.AtmosphereDepth;
@@ -82,7 +82,7 @@ namespace KrpcAutoPilot.Utils
                     pressure = atm,
                     g = g.Length(),
                     mass = mass,
-                    tar_height = TarHeight,
+                    tar_altitude = TarAltitude,
                     fuel_rate_at_full_throttle = State.Vessel.MaxFuelRate,
                     available_thrust = available_thrust,
                     t = t
@@ -90,7 +90,7 @@ namespace KrpcAutoPilot.Utils
                 SimulationResult sim_res = mass > dry_mass ? Planner(sim_data) : new SimulationResult();
                 var thrust_acc = sim_res.Thrust / mass;
 
-                double left_height = altitude - TarHeight;
+                double left_height = altitude - TarAltitude;
                 double dt = Math.Min(1d, Math.Max(0.1d, left_height / Math.Max(1d, vel_mag) / 2d)) * t_ratio_;
                 if (sim_res.Throttle > 1e-3d && next_burn_time < 0d)
                 {
@@ -146,21 +146,22 @@ namespace KrpcAutoPilot.Utils
                 }
                 else
                 {
-                    if (!enter_atm && next_burn_time<0.5d)
+                    if (!enter_atm && next_burn_time < 0.5d)
                     {
                         enter_atm = true;
                         EnterAtmosphereDirection = -vel.Norm();
                     }
                 }
-                if (altitude <= TarHeight)
-                    {
-                    double ratio = MathLib.InverseLerp(altitude_last, altitude, TarHeight);
+                if (altitude <= TarAltitude)
+                {
+                    double ratio = MathLib.InverseLerp(altitude_last, altitude, TarAltitude);
                     pos = MathLib.Lerp(pos_last, pos, ratio);
                     break;
                 }
             }
             last_print_ut_ = (ulong)ut_before_calc_;
 
+            ImpactTime = t;
             LiftEstimationForceAve = sim_lift_t > 1e-3d ? sim_lift_sum / sim_lift_t : 0d;
             LiftEstimationForceMin = sim_lift_min;
             LiftEstimationThrustAve = sim_thrust_sum / sim_lift_t;
@@ -181,7 +182,7 @@ namespace KrpcAutoPilot.Utils
             Vector3d vel = State.Vessel.Velocity;
             Vector3d pos = State.Vessel.Position;
             double altitude = pos.Length() - State.Body.Radius;
-            if (altitude <= TarHeight)
+            if (altitude <= TarAltitude)
                 return pos;
 
             double t = 0d;
@@ -192,7 +193,7 @@ namespace KrpcAutoPilot.Utils
                 Vector3d sim_drag_acc = -sim_drag_mag / mass * vel.Norm();
                 Vector3d acc = g + sim_drag_acc;
 
-                double left_height = altitude - TarHeight;
+                double left_height = altitude - TarAltitude;
                 double dt = Math.Min(1d, Math.Max(0.1d, left_height / Math.Max(1d, vel.Length()) / 2d)) * t_ratio_;
                 t += dt;
                 vel += acc * dt;
@@ -201,9 +202,9 @@ namespace KrpcAutoPilot.Utils
                 pos += vel * dt;
 
                 altitude = pos.Length() - State.Body.Radius;
-                if (altitude <= TarHeight)
+                if (altitude <= TarAltitude)
                 {
-                    double ratio = MathLib.InverseLerp(altitude_last, altitude, TarHeight);
+                    double ratio = MathLib.InverseLerp(altitude_last, altitude, TarAltitude);
                     pos = MathLib.Lerp(pos_last, pos, ratio);
                     break;
                 }
@@ -217,15 +218,16 @@ namespace KrpcAutoPilot.Utils
             while (true)
             {
                 Thread.Sleep(1);
-                if (!calculate_ ||
-                    !Data.Available ||
+                if (!calculate_)
+                    break;
+                if (!Data.Available ||
                     !State.Available)
                 {
                     ResultAvailable = false;
                     continue;
                 }
-                while (ut_before_calc_ == Data.UT)
-                    Thread.Sleep(1);
+                if (ut_before_calc_ == Data.UT)
+                    continue;
                 ut_before_calc_ = Data.UT;
                 Vector3d pos_without_action = null;
                 Thread thread = new Thread(() => { pos_without_action = CalculateImpactPosition(); });
@@ -248,13 +250,14 @@ namespace KrpcAutoPilot.Utils
             while (true)
             {
                 Thread.Sleep(1);
-                if (!calculate_ ||
-                    !ResultAvailable ||
+                if (!calculate_)
+                    break;
+                if (!ResultAvailable ||
                     !Data.Available ||
                     !State.Available)
                     continue;
-                while (ut_calc == Data.UT)
-                    Thread.Sleep(1);
+                if (ut_calc == Data.UT)
+                    continue;
                 ut_calc = Data.UT;
                 Vector3d ImpactPositionWithoutAction = CalculateImpactPosition();
                 res_update_mut_.WaitOne();
@@ -264,14 +267,16 @@ namespace KrpcAutoPilot.Utils
             }
         }
 
-        public void CalculateStart(double? tar_height = null, int? calculate_gap_in_ms = null)
+        public void CalculateStart(double? tar_altitude = null, int? calculate_gap_in_ms = null)
         {
-            if (tar_height.HasValue)
-                TarHeight = tar_height.Value;
+            if (tar_altitude.HasValue)
+                TarAltitude = tar_altitude.Value;
             if (calculate_gap_in_ms.HasValue)
                 CalculateGap = calculate_gap_in_ms.Value;
             calculate_ = true;
             ResultAvailable = false;
+            calculate_thread_.Start();
+            speed_up_thread_.Start();
         }
 
         public void CalculateStop()
@@ -287,42 +292,39 @@ namespace KrpcAutoPilot.Utils
 
         public Trajectory(
             Data.CommonData data, Data.VesselData state,
-            Connection conn, Service sc, CelestialBody body, Vessel vessel, double tar_height, int calculate_gap_in_ms,
+            Connection conn, Service sc, CelestialBody body, Vessel vessel, double tar_altitude, int calculate_gap_in_ms,
             Func<SimulationData, SimulationResult> planner)
         {
             Data = data;
             State = state;
-            TarHeight = tar_height;
+            TarAltitude = tar_altitude;
             CalculateGap = calculate_gap_in_ms;
             ResultAvailable = false;
             calculate_thread_ = new Thread(CalculateFunction);
-            calculate_thread_.Start();
             speed_up_thread_ = new Thread(SpeedUpFunction);
-            speed_up_thread_.Start();
             Planner = planner;
             NextBurnTime = double.MaxValue;
             LiftEstimationAngle = 10d / 180d * Math.PI;
             LiftEstimationTime = 5d;
 
-            sw_ = new StreamWriter("t.tsv");
+            //sw_ = new StreamWriter("t.tsv");
             cache_ = new Cache(
                 conn, sc, body, vessel,
-                100d, 10d, 2000d, LiftEstimationAngle);
+                200d, 20d, 5000d, LiftEstimationAngle);
         }
 
         public Trajectory(
             Data.CommonData data, Data.VesselData state,
-            Connection conn, Service sc, CelestialBody body, Vessel vessel, double tar_height, int calculate_gap_in_ms)
-            : this(data, state, conn, sc, body, vessel, tar_height, calculate_gap_in_ms,
+            Connection conn, Service sc, CelestialBody body, Vessel vessel, double tar_altitude, int calculate_gap_in_ms)
+            : this(data, state, conn, sc, body, vessel, tar_altitude, calculate_gap_in_ms,
                   (data) => { return new SimulationResult(); })
         { }
 
         ~Trajectory()
         {
-            calculate_thread_.Abort();
-            speed_up_thread_.Abort();
+            calculate_ = false;
 
-            sw_.Close();
+            //sw_.Close();
         }
 
         private readonly Thread calculate_thread_;
@@ -332,7 +334,7 @@ namespace KrpcAutoPilot.Utils
         private double ut_before_calc_ = 0d;
         private ulong last_print_ut_ = 0;
         private readonly Cache cache_;
-        private readonly StreamWriter sw_;
+        //private readonly StreamWriter sw_;
         private double drag_ratio_ = 0d;
         private double t_ave_ = -1d;
         private double t_ratio_ = 10d;
@@ -341,7 +343,7 @@ namespace KrpcAutoPilot.Utils
 
         private Data.CommonData Data { get; }
         private Data.VesselData State { get; }
-        public double TarHeight { get; set; }
+        public double TarAltitude { get; set; }
         public int CalculateGap { get; set; }
 
         public Vector3d ImpactPositionWithAction { get; private set; }
@@ -351,6 +353,7 @@ namespace KrpcAutoPilot.Utils
         public bool ResultAvailable { get; private set; }
         public Func<SimulationData, SimulationResult> Planner { get; set; }
         public double NextBurnTime { get; private set; }
+        public double ImpactTime { get; private set; }
         public double LiftEstimationAngle { get; set; }
         public double LiftEstimationTime { get; set; }
         public double LiftEstimationForceAve { get; private set; }

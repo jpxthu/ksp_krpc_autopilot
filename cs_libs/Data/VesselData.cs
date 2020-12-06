@@ -27,6 +27,7 @@ namespace KrpcAutoPilot.Data
             TimeToApoapsis = conn.AddStream(() => orbit.TimeToApoapsis);
             // Vessel
             Altitude = conn.AddStream(() => flight.MeanAltitude);
+            AvailableRCSForce = conn.AddStream(() => active_vessel.AvailableRCSForce);
             AvailableThrust = conn.AddStream(() => active_vessel.AvailableThrust);
             Direction = conn.AddStream(() => active_vessel.Direction(body.ReferenceFrame));
             DryMass = conn.AddStream(() => active_vessel.DryMass);
@@ -39,6 +40,7 @@ namespace KrpcAutoPilot.Data
             Right = conn.AddStream(() => sc.TransformDirection(
                 new Tuple<double, double, double>(1, 0, 0),
                 active_vessel.ReferenceFrame, body.ReferenceFrame));
+            Thrust = conn.AddStream(() => active_vessel.Thrust);
             Up = conn.AddStream(() => sc.TransformDirection(
                 new Tuple<double, double, double>(0, 0, -1),
                 active_vessel.ReferenceFrame, body.ReferenceFrame));
@@ -60,6 +62,7 @@ namespace KrpcAutoPilot.Data
         public Stream<double> TimeToApoapsis { get; }
         // Vessel
         public Stream<double> Altitude { get; }
+        public Stream<Tuple<Tuple<double, double, double>, Tuple<double, double, double>>> AvailableRCSForce { get; }
         public Stream<float> AvailableThrust { get; }
         public Stream<Tuple<double, double, double>> Direction { get; }
         public Stream<float> DryMass { get; }
@@ -68,6 +71,7 @@ namespace KrpcAutoPilot.Data
         public Stream<float> MaxVacuumThrust { get; }
         public Stream<Tuple<double, double, double>> Position { get; }
         public Stream<Tuple<double, double, double>> Right { get; }
+        public Stream<float> Thrust { get; }
         public Stream<Tuple<double, double, double>> Up { get; }
         public Stream<float> VacuumSpecificImpulse { get; }
         public Stream<Tuple<double, double, double>> Velocity { get; }
@@ -94,6 +98,7 @@ namespace KrpcAutoPilot.Data
 
             // Vessel
             Vessel.Altitude = Streams.Altitude.Get();
+            Vessel.AvailableRCSForce = new TupleV3d(Streams.AvailableRCSForce.Get());
             Vessel.AvailableThrust = Streams.AvailableThrust.Get();
             Vessel.Direction = new Vector3d(Streams.Direction.Get());
             Vessel.DryMass = Streams.DryMass.Get();
@@ -102,11 +107,13 @@ namespace KrpcAutoPilot.Data
             Vessel.MaxVacuumThrust = Streams.MaxVacuumThrust.Get();
             Vessel.Position = new Vector3d(Streams.Position.Get());
             Vessel.Right = new Vector3d(Streams.Right.Get());
+            Vessel.Thrust = Streams.Thrust.Get();
             Vessel.Up = new Vector3d(Streams.Up.Get());
             Vessel.VacuumSpecificImpulse = Streams.VacuumSpecificImpulse.Get();
             Vessel.Velocity = new Vector3d(Streams.Velocity.Get());
 
             Vessel.BodyUp = Vessel.Position.Norm();
+            Vessel.East = Vector3d.Cross(Vessel.BodyUp, new Vector3d(0d, 1d, 0d)).Norm();
             Vessel.Gravity = Body.GravitationalParameter / Vessel.Position.LengthSquared();
             Vessel.MaxFuelRate = Vessel.MaxVacuumThrust / Vessel.VacuumSpecificImpulse / Constants.Common.GRAVITY_ON_KERBIN;
             Vessel.VelocityMag = Vessel.Velocity.Length();

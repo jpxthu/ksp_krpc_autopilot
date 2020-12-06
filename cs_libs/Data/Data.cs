@@ -42,12 +42,23 @@ namespace KrpcAutoPilot.Data
     {
         public double Altitude { get; set; }
         /// <summary>
+        /// The maximum force that the currently active RCS thrusters can generate. Returns
+        /// the forces in N along each of the coordinate axes of the vessels reference frame
+        /// (SpaceCenter.ReferenceFrame). These axes are equivalent to the right, forward
+        /// and bottom directions of the vessel.
+        /// </summary>
+        public TupleV3d AvailableRCSForce { get; set; }
+        /// <summary>
         /// Gets the total available thrust that can be produced by the vessel's active engines, in Newtons.
         /// </summary>
         public double AvailableThrust { get; set; }
         public Vector3d BodyUp { get; set; }
         public Vector3d Direction { get; set; }
+        /// <summary>
+        /// The total mass of the vessel, excluding resources, in kg.
+        /// </summary>
         public double DryMass { get; set; }
+        public Vector3d East { get; set; }
         public Vector3d Forward { get; set; }
         public double Gravity { get; set; }
         /// <summary>
@@ -66,6 +77,12 @@ namespace KrpcAutoPilot.Data
         public double MaxVacuumThrust { get; set; }
         public Vector3d Position { get; set; }
         public Vector3d Right { get; set; }
+        /// <summary>
+        /// The total thrust currently being produced by the vessel's engines, in Newtons.
+        /// This is computed by summing SpaceCenter.Engine.Thrust for every engine in the
+        /// vessel.
+        /// </summary>
+        public double Thrust { get; set; }
         public Vector3d Up { get; set; }
         /// <summary>
         /// The combined vacuum specific impulse of all active engines, in seconds. This

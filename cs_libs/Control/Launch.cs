@@ -1,4 +1,7 @@
-﻿using KRPC.Client.Services.SpaceCenter;
+﻿//using KRPC.Client.Services.Drawing;
+using KRPC.Client.Services.SpaceCenter;
+using KrpcAutoPilot.Utils;
+using System;
 
 namespace KrpcAutoPilot
 {
@@ -14,34 +17,48 @@ namespace KrpcAutoPilot
             launch_apoapsis = State.Orbit.Apoapsis;
         }
 
-        public bool LaunchIntoApoapsis(double tar_apoapsis, double max_q = 15000)
+        public bool LaunchIntoApoapsis(double tar_apoapsis, double max_q = 15000d)
         {
-            double tar_pitch = (1.0 - (State.Orbit.Apoapsis - State.Body.Radius) / tar_apoapsis) * 90;
+            double tar_pitch = Math.Sqrt(Math.Max(0d, 1d - (State.Orbit.Apoapsis - State.Body.Radius) / tar_apoapsis)) * Math.PI / 2d;
+            Console.WriteLine(tar_pitch);
 
-            tar_apoapsis += State.Body.Radius;
-
-            double q = Utils.Common.DynamicPressure(
+            double q = Common.DynamicPressure(
                 State.Environment.StaticPressure,
                 State.Environment.Temperature,
                 State.Vessel.VelocityMag);
-            double throttle = System.Math.Min(1, System.Math.Max(0, (1.1 - q / max_q) * 5));
+            double throttle = Math.Min(1d, Math.Max(0d, (1.1d - q / max_q) * 5d));
 
-            Command.SetTargetPitchAndHeading(tar_pitch, 90);
+            Vector3d dir = State.Vessel.East * Math.Cos(tar_pitch) + State.Vessel.BodyUp * Math.Sin(tar_pitch);
+            Command.SetTargetDirection(dir);
             Command.SetThrottle(throttle);
+            //Conn.Drawing().Clear();
+            //Conn.Drawing().AddDirection(
+            //    SpaceCenter.TransformDirection(State.Vessel.East.ToTuple(), OrbitBody.ReferenceFrame, ActiveVessel.ReferenceFrame),
+            //    ActiveVessel.ReferenceFrame, 20f);
+            //Conn.Drawing().AddDirection(
+            //    SpaceCenter.TransformDirection(State.Vessel.BodyUp.ToTuple(), OrbitBody.ReferenceFrame, ActiveVessel.ReferenceFrame),
+            //    ActiveVessel.ReferenceFrame, 30f);
+            //Conn.Drawing().AddDirection(
+            //    SpaceCenter.TransformDirection(dir.ToTuple(), OrbitBody.ReferenceFrame, ActiveVessel.ReferenceFrame),
+            //    ActiveVessel.ReferenceFrame, 40f);
 
-            return State.Orbit.Apoapsis >= tar_apoapsis;
+            return State.Orbit.Apoapsis >= tar_apoapsis + State.Body.Radius;
         }
 
         public bool LaunchIntoPeriapsis(double tar_periapsis)
         {
             tar_periapsis += State.Body.Radius;
 
-            if (launch_burn_stage) {
+            if (launch_burn_stage)
+            {
                 Command.SetThrottle(1);
-                if (State.Orbit.Apoapsis + State.Orbit.Periapsis >= tar_periapsis + launch_apoapsis) {
+                if (State.Orbit.Apoapsis + State.Orbit.Periapsis >= tar_periapsis + launch_apoapsis)
+                {
                     launch_periapsis_node.Remove();
                     return true;
-                } else {
+                }
+                else
+                {
                     return false;
                 }
             }
@@ -49,16 +66,18 @@ namespace KrpcAutoPilot
             double max_acc = State.Vessel.AvailableThrust / State.Vessel.Mass;
 
             double vel_apoapsis = State.Vessel.VelocityMag * (State.Vessel.Altitude + State.Body.Radius) / State.Orbit.Apoapsis;
-            double vel_apoapsis_tar = System.Math.Sqrt(State.Body.GravitationalParameter / State.Orbit.Apoapsis);
+            double vel_apoapsis_tar = Math.Sqrt(State.Body.GravitationalParameter / State.Orbit.Apoapsis);
             double dvel_tar = vel_apoapsis_tar - vel_apoapsis;
             double burn_time = dvel_tar / max_acc;
             double drift_time = State.Orbit.TimeToApoapsis - burn_time / 2 - 2;
 
-            Command.SetTargetPitchAndHeading((1.0 - (State.Orbit.Apoapsis - State.Body.Radius) / (tar_periapsis - State.Body.Radius)) * 90, 90);
-            Command.SetThrottle(System.Math.Max(0.0, System.Math.Min(1.0, (tar_periapsis - State.Orbit.Apoapsis) / 20)));
+            double tar_pitch = (1.0 - (State.Orbit.Apoapsis - State.Body.Radius) / (tar_periapsis - State.Body.Radius)) * Math.PI / 2d;
+            Command.SetTargetDirection(State.Vessel.East * Math.Cos(tar_pitch) + State.Vessel.BodyUp * Math.Sin(tar_pitch));
+            Command.SetThrottle(Math.Max(0.0, Math.Min(1.0, (tar_periapsis - State.Orbit.Apoapsis) / 20)));
 
-            if (drift_time < 0) {
-                Node node = ActiveVessel.Control.AddNode(Data.UT + State.Orbit.TimeToApoapsis, System.Convert.ToSingle(dvel_tar));
+            if (drift_time < 0)
+            {
+                Node node = ActiveVessel.Control.AddNode(Data.UT + State.Orbit.TimeToApoapsis, Convert.ToSingle(dvel_tar));
                 //Command.SetTargetDirection(node.Direction(ActiveVessel.ReferenceFrame));
                 ActiveVessel.AutoPilot.ReferenceFrame = node.ReferenceFrame;
                 Command.SetTargetDirection(0.0f, 1.0f, 0.0f);

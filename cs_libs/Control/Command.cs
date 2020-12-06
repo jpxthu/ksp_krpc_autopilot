@@ -105,9 +105,8 @@ namespace KrpcAutoPilot
             ActiveVessel.Control.Up = Convert.ToSingle(RcsUp);
         }
 
-        public Command(Service sc, Vessel vessel)
+        public Command(Vessel vessel)
         {
-            SpaceCenter = sc;
             ActiveVessel = vessel;
             AutoPilot = vessel.AutoPilot;
             Engaged = false;
@@ -119,7 +118,6 @@ namespace KrpcAutoPilot
             vessel.AutoPilot.ReferenceFrame = vessel.Orbit.Body.ReferenceFrame;
         }
 
-        private Service SpaceCenter { get; }
         private Vessel ActiveVessel { get; }
         private AutoPilot AutoPilot { get; }
         private bool Engaged { get; set; }

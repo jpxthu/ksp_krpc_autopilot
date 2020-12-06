@@ -7,7 +7,7 @@
 
   <ItemGroup>
     <Reference Include="KRPC.Client">
-      <HintPath>..\..\..\ksp_auto_pilot\external\krpc-csharp-0.4.8\net45\KRPC.Client.dll</HintPath>
+      <HintPath>..\external\krpc-csharp-0.4.8\net45\KRPC.Client.dll</HintPath>
     </Reference>
   </ItemGroup>
 

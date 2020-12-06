@@ -2,7 +2,7 @@
 
 namespace KrpcAutoPilot.Utils
 {
-    public class LongitudinalPlanner
+    public class LinearPlanner
     {
         public static void Hover(
             double s,
@@ -15,7 +15,7 @@ namespace KrpcAutoPilot.Utils
             if (s > sx_pos)
             {
                 double sb = max_acc_pos / 2d / k2;
-                vel = -Math.Sqrt(2 * max_acc_pos * (s - sb));
+                vel = -Math.Sqrt(2d * max_acc_pos * (s - sb));
                 acc = max_acc_pos;
             }
             else if (s < -sx_neg)
@@ -23,6 +23,33 @@ namespace KrpcAutoPilot.Utils
                 double sb = max_acc_neg / 2d / k2;
                 vel = Math.Sqrt(-2d * max_acc_neg * (s + sb));
                 acc = -max_acc_neg;
+            }
+            else
+            {
+                vel = -k * s;
+                acc = k2 * s;
+            }
+        }
+
+        public static void OneWay(
+            double s,
+            double k, double max_acc, double min_vel,
+            out double vel, out double acc)
+        {
+            double k2 = k * k;
+            double sx = max_acc / k2;
+            double s_min = min_vel / k;
+            s += s_min;
+            if (s < s_min)
+            {
+                vel = -min_vel;
+                acc = 0d;
+            }
+            else if (s > sx)
+            {
+                double sb = max_acc / 2d / k2;
+                vel = -Math.Sqrt(2d * max_acc * (s - sb));
+                acc = max_acc;
             }
             else
             {
