@@ -7,7 +7,7 @@ namespace KrpcAutoPilot
     {
         private bool HoverDirection()
         {
-            Command.SetTargetDirection(State.Vessel.BodyUp);
+            Command.SetTargetDirection(State.Vessel.SurfUp);
             return false;
         }
 
@@ -20,8 +20,8 @@ namespace KrpcAutoPilot
             }
 
             double vessel_up_ratio = State.Vessel.VelocityMag > 100d ?
-                -State.Vessel.Velocity.Norm() * State.Vessel.BodyUp :
-                State.Vessel.Direction * State.Vessel.BodyUp;
+                -State.Vessel.Velocity.Norm() * State.Vessel.SurfUp :
+                State.Vessel.Direction * State.Vessel.SurfUp;
             if (vessel_up_ratio < 0.5d)
             {
                 Command.SetThrottle(0d);

@@ -4,36 +4,21 @@ using System;
 
 namespace KrpcAutoPilot
 {
-    class Command
+    public class Command
     {
-        private enum DirectionCommandType
-        {
-            PITCH,
-            VECTOR
-        }
-
-        /// <summary>
-        /// 设定目标 pitch 和 heading angles
-        /// </summary>
-        /// <param name="pitch">目标 pitch angle，degree，[-90°, +90°]</param>
-        /// <param name="heading">目标 heading angle，degree，[0°, 360°]</param>
-        public void SetTargetPitchAndHeading(double pitch, double heading)
-        {
-            DirectionType = DirectionCommandType.PITCH;
-            Pitch = pitch;
-            Heading = heading;
-        }
-
         public void SetTargetDirection(double x, double y, double z)
         {
-            DirectionType = DirectionCommandType.VECTOR;
             DirectionVector = new Vector3d(x, y, z).Norm();
         }
 
         public void SetTargetDirection(Vector3d v)
         {
-            DirectionType = DirectionCommandType.VECTOR;
             DirectionVector = v.Norm();
+        }
+
+        public void SetHeading(double heading)
+        {
+            Heading = heading;
         }
 
         /// <summary>
@@ -69,65 +54,17 @@ namespace KrpcAutoPilot
             RcsUp = throttle;
         }
 
-        public void Engage()
+        public Command()
         {
-            if (!Engaged) {
-                AutoPilot.Engage();
-                Engaged = true;
-            }
+            Heading = 0d;
+            RcsRight = RcsUp = RcsForward = Throttle = 0d;
         }
 
-        public void DisEngage()
-        {
-            if (Engaged) {
-                AutoPilot.Disengage();
-                Engaged = false;
-            }
-        }
-
-        public void Execute()
-        {
-            switch (DirectionType) {
-                case DirectionCommandType.PITCH:
-                    AutoPilot.TargetPitchAndHeading(Convert.ToSingle(Pitch), Convert.ToSingle(Heading));
-                    break;
-                case DirectionCommandType.VECTOR:
-                    AutoPilot.TargetDirection = new Tuple<double, double, double>(
-                        DirectionVector.X,
-                        DirectionVector.Y,
-                        DirectionVector.Z);
-                    break;
-            }
-
-            ActiveVessel.Control.Throttle = Convert.ToSingle(Throttle);
-            ActiveVessel.Control.Forward = Convert.ToSingle(RcsForward);
-            ActiveVessel.Control.Right = Convert.ToSingle(RcsRight);
-            ActiveVessel.Control.Up = Convert.ToSingle(RcsUp);
-        }
-
-        public Command(Vessel vessel)
-        {
-            ActiveVessel = vessel;
-            AutoPilot = vessel.AutoPilot;
-            Engaged = false;
-            DirectionType = DirectionCommandType.PITCH;
-            Pitch = 0.0;
-            Heading = 0.0;
-            Throttle = 0.0;
-
-            vessel.AutoPilot.ReferenceFrame = vessel.Orbit.Body.ReferenceFrame;
-        }
-
-        private Vessel ActiveVessel { get; }
-        private AutoPilot AutoPilot { get; }
-        private bool Engaged { get; set; }
-        private DirectionCommandType DirectionType { get; set; }
-        private Vector3d DirectionVector { get; set; }
-        private double Pitch { get; set; }
-        private double Heading { get; set; }
-        private double Throttle { get; set; }
-        private double RcsRight { get; set; }
-        private double RcsUp { get; set; }
-        private double RcsForward { get; set; }
+        public Vector3d DirectionVector { get; private set; }
+        public double Heading { get; private set; }
+        public double RcsRight { get; private set; }
+        public double RcsUp { get; private set; }
+        public double RcsForward { get; private set; }
+        public double Throttle { get; private set; }
     }
 }

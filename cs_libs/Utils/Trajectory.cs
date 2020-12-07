@@ -2,6 +2,7 @@
 using KRPC.Client.Services.SpaceCenter;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 
 namespace KrpcAutoPilot.Utils
@@ -241,6 +242,20 @@ namespace KrpcAutoPilot.Utils
                 impact_pos_diff_ = pos_with_action - pos_without_action;
                 res_update_mut_.ReleaseMutex();
                 ResultAvailable = true;
+
+                /*history_res_.Push(new Tuple<double, Vector3d>(ut_before_calc_, pos_with_action));
+                if (history_res_.Filled)
+                {
+                    double[] ta = history_res_.Value.Select(o => o.Item1).ToArray();
+                    double[] xa = history_res_.Value.Select(o => o.Item2.X).ToArray();
+                    double[] ya = history_res_.Value.Select(o => o.Item2.Y).ToArray();
+                    double[] za = history_res_.Value.Select(o => o.Item2.Z).ToArray();
+                    double t = Data.UT + PredictTime;
+                    if (MathLib.LinearFit(ta, xa, t, out double x) &&
+                        MathLib.LinearFit(ta, ya, t, out double y) &&
+                        MathLib.LinearFit(ta, za, t, out double z))
+                        PredictImpactPositionWithAction = new Vector3d(x, y, z);
+                }*/
             }
         }
 
@@ -311,6 +326,8 @@ namespace KrpcAutoPilot.Utils
             cache_ = new Cache(
                 conn, sc, body, vessel,
                 200d, 20d, 5000d, LiftEstimationAngle);
+
+            PredictTime = 2d;
         }
 
         public Trajectory(
@@ -345,6 +362,10 @@ namespace KrpcAutoPilot.Utils
         private Data.VesselData State { get; }
         public double TarAltitude { get; set; }
         public int CalculateGap { get; set; }
+
+        private CircularBuffer<Tuple<double, Vector3d>> history_res_ = new CircularBuffer<Tuple<double, Vector3d>>(5);
+        public double PredictTime { get; set; }
+        public Vector3d PredictImpactPositionWithAction { get; private set; }
 
         public Vector3d ImpactPositionWithAction { get; private set; }
         public Vector3d ImpactPositionWithoutAction { get; private set; }

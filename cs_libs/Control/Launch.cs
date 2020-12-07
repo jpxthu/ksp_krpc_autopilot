@@ -17,7 +17,7 @@ namespace KrpcAutoPilot
             launch_apoapsis = State.Orbit.Apoapsis;
         }
 
-        public bool LaunchIntoApoapsis(double tar_apoapsis, double max_q = 15000d)
+        public bool LaunchIntoApoapsis(double tar_apoapsis, double heading, double max_q = 15000d)
         {
             double tar_pitch = Math.Sqrt(Math.Max(0d, 1d - (State.Orbit.Apoapsis - State.Body.Radius) / tar_apoapsis)) * Math.PI / 2d;
             Console.WriteLine(tar_pitch);
@@ -28,8 +28,9 @@ namespace KrpcAutoPilot
                 State.Vessel.VelocityMag);
             double throttle = Math.Min(1d, Math.Max(0d, (1.1d - q / max_q) * 5d));
 
-            Vector3d dir = State.Vessel.East * Math.Cos(tar_pitch) + State.Vessel.BodyUp * Math.Sin(tar_pitch);
+            Vector3d dir = State.Vessel.SurfEast * Math.Cos(tar_pitch) + State.Vessel.SurfUp * Math.Sin(tar_pitch);
             Command.SetTargetDirection(dir);
+            Command.SetHeading(heading);
             Command.SetThrottle(throttle);
             //Conn.Drawing().Clear();
             //Conn.Drawing().AddDirection(
@@ -72,7 +73,7 @@ namespace KrpcAutoPilot
             double drift_time = State.Orbit.TimeToApoapsis - burn_time / 2 - 2;
 
             double tar_pitch = (1.0 - (State.Orbit.Apoapsis - State.Body.Radius) / (tar_periapsis - State.Body.Radius)) * Math.PI / 2d;
-            Command.SetTargetDirection(State.Vessel.East * Math.Cos(tar_pitch) + State.Vessel.BodyUp * Math.Sin(tar_pitch));
+            Command.SetTargetDirection(State.Vessel.SurfEast * Math.Cos(tar_pitch) + State.Vessel.SurfUp * Math.Sin(tar_pitch));
             Command.SetThrottle(Math.Max(0.0, Math.Min(1.0, (tar_periapsis - State.Orbit.Apoapsis) / 20)));
 
             if (drift_time < 0)

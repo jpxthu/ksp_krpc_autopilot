@@ -20,7 +20,6 @@ namespace KrpcAutoPilot
             RcsAltitudeControl = true;
 
             Trajectory.CalculateStart(tar_altitude: tar_altitude);
-            Command.SetTargetDirection(-State.Vessel.Velocity);
             return true;
         }
 
@@ -28,7 +27,7 @@ namespace KrpcAutoPilot
         /// 高空调整姿态和点火，调整下落轨迹
         /// </summary>
         /// <returns></returns>
-        public bool AdjustLandingPosition(Vector3d tar_pos, double tar_altitude)
+        public bool AdjustLandingPosition(Vector3d tar_pos, double tar_altitude, double heading = 0d)
         {
             if (!Trajectory.ResultAvailable)
                 return false;
@@ -36,12 +35,13 @@ namespace KrpcAutoPilot
             var distance = tar_v.Length();
             tar_v = VectorHorizonPart(tar_v).Norm();
             var dir_error = State.Vessel.Direction * tar_v;
-            var tar_t = Math.Clamp(distance / 15000d, 0.5d, 1d) *
+            var tar_t = Math.Clamp(distance / 15000d, 0.2d, 0.6d) *
                 Math.Max(0d, (dir_error - 0.95d) * 20d);
             //Conn.Drawing().Clear();
             //Conn.Drawing().AddDirection(
             //    SpaceCenter.TransformDirection(tar_v.ToTuple(), ActiveVessel.Orbit.Body.ReferenceFrame, ActiveVessel.ReferenceFrame),
             //    ActiveVessel.ReferenceFrame);
+            Command.SetHeading(heading);
             if (distance < 1000d && tar_v * State.Vessel.Direction < 0.985d)
             {
                 Command.SetThrottle(0d);
@@ -66,16 +66,18 @@ namespace KrpcAutoPilot
         /// <returns></returns>
         public bool Landing(
             Vector3d tar_pos, double tar_altitude, RcsLayout rcs_layout,
-            double gear_deploy_time)
+            double gear_deploy_time,
+            double heading=0d)
         {
             //if (RcsAltitudeControl && Trajectory.ResultAvailable && Trajectory.NextBurnTime < 0.5d)
             //    RcsAltitudeControl = false;
             tar_pos = TargetPositionCompensate(tar_pos, tar_altitude);
 
-            Conn.Drawing().Clear();
-            if (State.Vessel.Altitude - tar_altitude < 10000d && -State.Vessel.VelocityUp < 10d)
+            //Conn.Drawing().Clear();
+            if (State.Vessel.Altitude - tar_altitude < 10000d && -State.Vessel.VelocityUp < 20d)
             {
-                LandingDirectionLast();
+                LandingDirection(tar_pos, tar_altitude);
+                //LandingDirectionLast();
                 LandingRcsLast(tar_pos, rcs_layout);
                 if (!gear_deployed && Trajectory.ImpactTime <= gear_deploy_time)
                     gear_deployed = ActiveVessel.Control.Gear = true;
@@ -88,6 +90,7 @@ namespace KrpcAutoPilot
                 LandingRcs(tar_pos, tar_altitude, rcs_layout);
             }
             LandingThrust(tar_altitude);
+            Command.SetHeading(heading);
 
             return false;
         }

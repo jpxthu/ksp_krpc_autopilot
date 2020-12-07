@@ -25,7 +25,7 @@ namespace CsSamples
             while (true)
             {
                 control.UpdateData();
-                if (control.LaunchIntoApoapsis(apoapsis))
+                if (control.LaunchIntoApoapsis(apoapsis, 0d))
                     break;
                 control.Execute();
                 Thread.Sleep(100);
@@ -44,6 +44,7 @@ namespace CsSamples
         {
             KrpcAutoPilot.Control control = new KrpcAutoPilot.Control(connection, space_center, data, vessel);
             control.UpdateData();
+            control.Command.SetHeading(Math.PI);
 
             control.Engage();
 
@@ -51,7 +52,6 @@ namespace CsSamples
 
             Console.WriteLine("Landing init");
             control.LandingInit(tar_altitude);
-            control.Execute();
             Thread.Sleep(5000);
 
             Console.WriteLine("Adjust landing position");

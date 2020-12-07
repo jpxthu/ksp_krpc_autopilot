@@ -1,8 +1,10 @@
 ﻿using CsSamples;
 using KRPC.Client;
+using KRPC.Client.Services.Drawing;
 using KRPC.Client.Services.KRPC;
 using KRPC.Client.Services.SpaceCenter;
 using KrpcAutoPilot.Utils;
+using System;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -25,6 +27,21 @@ namespace Test
             CelestialBody body = orbit.Body;
             KrpcAutoPilot.Data.CommonData data = new KrpcAutoPilot.Data.CommonData(conn, sc);
 
+            //conn.Drawing().AddDirection(new Tuple<double, double, double>(1, 0, 0), vessel.ReferenceFrame, 10f);  // pitch  right
+            //conn.Drawing().AddDirection(new Tuple<double, double, double>(0, 1, 0), vessel.ReferenceFrame, 20f);  // roll   forward
+            //conn.Drawing().AddDirection(new Tuple<double, double, double>(0, 0, 1), vessel.ReferenceFrame, 30f);  // yaw    down
+
+            /*KrpcAutoPilot.Control control = new KrpcAutoPilot.Control(conn, sc, data, vessel);
+            while (true)
+            {
+                data.Update();
+                control.UpdateData();
+                control.Command.SetTargetDirection(1, 0, 0);
+                control.Command.SetHeading(0);
+                control.Execute();
+                Thread.Sleep(100);
+            }*/
+
             bool should_exit = false;
             Thread thread_main = new Thread(() =>
             {
@@ -36,18 +53,13 @@ namespace Test
             });
             thread_main.Start();
 
-            /*Thread hover_thread = new Thread(() => VesselControl.Hover(
-                conn, sc, vessel, data, 150d));
-            hover_thread.Start();
-            hover_thread.Join();*/
-
             // Parts
             Engine engine_main = vessel.Parts.Engines.Where(p => p.Part.Tag == "engine_main").ToList().First();
             Engine engine_north = vessel.Parts.Engines.Where(p => p.Part.Tag == "engine_north").ToList().First();
             Engine engine_south = vessel.Parts.Engines.Where(p => p.Part.Tag == "engine_south").ToList().First();
             Part tank_north = vessel.Parts.WithTag("tank_north").ToList().First();
             Part tank_south = vessel.Parts.WithTag("tank_south").ToList().First();
-            
+
             // Launch
             engine_main.ThrustLimit = 0.6f;
             //engine_main.GimbalLimit = 0.2f;
@@ -73,14 +85,19 @@ namespace Test
             vessel_north.Control.Throttle = 0.1f;
             vessel_north.Control.RCS = true;
             vessel_north.Control.Right = -1f;
+            vessel_north.Control.Up = -1f;
             vessel_south.Control.Throttle = 0.1f;
             vessel_south.Control.RCS = true;
-            vessel_south.Control.Right = -1f;
-            Thread.Sleep(500);
+            vessel_south.Control.Right = 1f;
+            vessel_south.Control.Up = -1f;
+            Thread.Sleep(300);
             vessel_north.Control.Throttle = 0f;
             vessel_north.Control.Right = 0f;
             vessel_south.Control.Throttle = 0f;
             vessel_south.Control.Right = 0f;
+            Thread.Sleep(1700);
+            vessel_north.Control.Up = 0f;
+            vessel_south.Control.Up = 0f;
             engine_north.GimbalLimit = 1f;
             engine_south.GimbalLimit = 1f;
 

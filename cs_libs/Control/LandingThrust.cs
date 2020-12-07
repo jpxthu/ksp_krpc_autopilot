@@ -41,8 +41,8 @@ namespace KrpcAutoPilot
             }
 
             double vessel_up_ratio = State.Vessel.VelocityMag > 100d ?
-                -State.Vessel.Velocity.Norm() * State.Vessel.BodyUp :
-                State.Vessel.Direction * State.Vessel.BodyUp;
+                -State.Vessel.Velocity.Norm() * State.Vessel.SurfUp :
+                State.Vessel.Direction * State.Vessel.SurfUp;
             if (vessel_up_ratio < 0.5d)
             {
                 Command.SetThrottle(0d);
@@ -51,10 +51,6 @@ namespace KrpcAutoPilot
 
             double max_thrust_up = vessel_up_ratio * State.Vessel.AvailableThrust;
             double max_acc_up = Math.Max(0.01d, max_thrust_up / State.Vessel.Mass * LANDING_MAX_THROTTLE - State.Vessel.Gravity);
-            double max_acc_down = State.Vessel.Gravity * LANDING_MAX_THROTTLE;
-            //LinearPlanner.Hover(State.Vessel.Altitude - tar_altitude,
-            //    0.3d, max_acc_up, max_acc_down,
-            //    out double tar_vel, out double tar_acc);
             LinearPlanner.OneWay(State.Vessel.Altitude - tar_altitude,
                 0.3d, max_acc_up, MIN_LANDING_VELOCITY,
                 out double tar_vel, out double tar_acc);

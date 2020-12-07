@@ -12,7 +12,7 @@ namespace KrpcAutoPilot
 
             double vessel_up_ratio = -State.Vessel.Direction * State.Vessel.Velocity.Norm();
             if ((vessel_up_ratio < 0.9d && State.Vessel.VelocityMag > 50d) ||
-                State.Vessel.Direction * State.Vessel.BodyUp < 0.5d)
+                State.Vessel.Direction * State.Vessel.SurfUp < 0.5d)
             {
                 Command.SetRcsRight(0d);
                 Command.SetRcsUp(0d);

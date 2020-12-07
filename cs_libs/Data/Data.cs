@@ -41,6 +41,7 @@ namespace KrpcAutoPilot.Data
     public class Vessel
     {
         public double Altitude { get; set; }
+        public Vector3d AngularVelocity { get; set; }
         /// <summary>
         /// The maximum force that the currently active RCS thrusters can generate. Returns
         /// the forces in N along each of the coordinate axes of the vessels reference frame
@@ -52,13 +53,19 @@ namespace KrpcAutoPilot.Data
         /// Gets the total available thrust that can be produced by the vessel's active engines, in Newtons.
         /// </summary>
         public double AvailableThrust { get; set; }
-        public Vector3d BodyUp { get; set; }
+        /// <summary>
+        /// The maximum torque that the vessel generates. Includes contributions from reaction
+        /// wheels, RCS, gimballed engines and aerodynamic control surfaces. Returns the
+        /// torques in N.m around each of the coordinate axes of the vessels reference frame
+        /// (SpaceCenter.ReferenceFrame). These axes are equivalent to the pitch, roll and
+        /// yaw axes of the vessel.
+        /// </summary>
+        public TupleV3d AvailableTorque { get; set; }
         public Vector3d Direction { get; set; }
         /// <summary>
         /// The total mass of the vessel, excluding resources, in kg.
         /// </summary>
         public double DryMass { get; set; }
-        public Vector3d East { get; set; }
         public Vector3d Forward { get; set; }
         public double Gravity { get; set; }
         /// <summary>
@@ -75,8 +82,17 @@ namespace KrpcAutoPilot.Data
         /// SpaceCenter.Engine.MaxVacuumThrust for every active engine.
         /// </summary>
         public double MaxVacuumThrust { get; set; }
+        /// <summary>
+        /// The moment of inertia of the vessel around its center of mass in kg.m^2. The
+        /// inertia values in the returned 3-tuple are around the pitch, roll and yaw directions
+        /// respectively. This corresponds to the vessels reference frame (SpaceCenter.ReferenceFrame).
+        /// </summary>
+        public Vector3d MomentOfInertia { get; set; }
         public Vector3d Position { get; set; }
         public Vector3d Right { get; set; }
+        public Vector3d SurfEast { get; set; }
+        public Vector3d SurfNorth { get; set; }
+        public Vector3d SurfUp { get; set; }
         /// <summary>
         /// The total thrust currently being produced by the vessel's engines, in Newtons.
         /// This is computed by summing SpaceCenter.Engine.Thrust for every engine in the
