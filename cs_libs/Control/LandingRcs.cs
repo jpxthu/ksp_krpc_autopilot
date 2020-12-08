@@ -66,10 +66,9 @@ namespace KrpcAutoPilot
             Vector3d tar_acc_h = -err_h.Norm() * tar_acc;
             //Vector3d tar_vel_h = Vector3d.Zero;
             //Vector3d tar_acc_h = Vector3d.Zero;
-            Vector3d vel_h = VectorHorizonPart(State.Vessel.Velocity);
-            Vector3d engine_acc_h = VectorHorizonPart(State.Vessel.Thrust * State.Vessel.Direction);
+            //Vector3d engine_acc_h = VectorHorizonPart(State.Vessel.Thrust * State.Vessel.Direction);
 
-            tar_acc_h += (tar_vel_h - vel_h) * 1d;// - engine_acc_h * 0.5d;
+            tar_acc_h += (tar_vel_h - State.Vessel.VelocityHorizon) * 1d;// - engine_acc_h * 0.5d;
             RcsSetByForce(
                 Math.Clamp(tar_acc_h * State.Vessel.Right * State.Vessel.Mass, -rcs_force_limit, rcs_force_limit),
                 Math.Clamp(tar_acc_h * State.Vessel.Up * State.Vessel.Mass, -rcs_force_limit, rcs_force_limit));

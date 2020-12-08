@@ -40,7 +40,9 @@ namespace CsSamples
             Vessel vessel,
             KrpcAutoPilot.Control.RcsLayout rcs_layout,
             KrpcAutoPilot.Data.CommonData data,
-            Vector3d tar_pos, double tar_altitude)
+            Vector3d tar_pos, double tar_altitude, double heading,
+            ref KrpcAutoPilot.Control.LandingAdjustBurnStatus landing_adjust_burn_status,
+            ref bool landing_adjust_could_burn)
         {
             KrpcAutoPilot.Control control = new KrpcAutoPilot.Control(connection, space_center, data, vessel);
             control.UpdateData();
@@ -52,22 +54,32 @@ namespace CsSamples
 
             Console.WriteLine("Landing init");
             control.LandingInit(tar_altitude);
-            Thread.Sleep(5000);
 
             Console.WriteLine("Adjust landing position");
             while (true)
             {
                 control.UpdateData();
-                if (control.AdjustLandingPosition(tar_pos, tar_altitude))
+                landing_adjust_burn_status = control.AdjustLandingPosition(tar_pos, tar_altitude, heading, landing_adjust_could_burn);
+                if (landing_adjust_burn_status == KrpcAutoPilot.Control.LandingAdjustBurnStatus.FINISHED)
                     break;
                 control.Execute();
                 Thread.Sleep(100);
             }
 
+            foreach (var e in vessel.Parts.Engines)
+            {
+                if (e.Active)
+                {
+                    e.ToggleMode();
+                    break;
+                }
+            }
+            control.Trajectory.ReCacheAvailableThrust();
+
             while (true)
             {
                 control.UpdateData();
-                if (control.Landing(tar_pos, tar_altitude, rcs_layout, 5d))
+                if (control.Landing(tar_pos, tar_altitude, rcs_layout, 5d, heading))
                     break;
                 control.Execute();
                 Thread.Sleep(100);

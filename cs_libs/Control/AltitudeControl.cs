@@ -18,6 +18,9 @@ namespace KrpcAutoPilot
 
         private void AltitudeControl()
         {
+            if (Command.DirectionVector is null)
+                return;
+
             Vector3d pitch_axis = State.Vessel.Right;
             Vector3d yaw_axis = -State.Vessel.Up;
             Vector3d torque = State.Vessel.AvailableTorque.Item1;

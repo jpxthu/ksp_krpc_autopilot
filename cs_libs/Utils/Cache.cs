@@ -35,6 +35,40 @@ namespace KrpcAutoPilot.Utils
             Reset(altitude_step, velocity_step, velocity_max, aoa);
         }
 
+        public void ResetAtm(double altitude_step)
+        {
+            double altitude_max;
+            if (body_.HasAtmosphere)
+            {
+                altitude_max = body_.AtmosphereDepth;
+            }
+            else
+            {
+                altitude_max = 1d;
+                altitude_step = 1d;
+            }
+
+            uint altitude_n = (uint)Math.Ceiling(altitude_max / altitude_step);
+            atm_.ResetCache(0d, altitude_step, altitude_n);
+        }
+
+        public void ResetAvailableShrust(double altitude_step)
+        {
+            double altitude_max;
+            if (body_.HasAtmosphere)
+            {
+                altitude_max = body_.AtmosphereDepth;
+            }
+            else
+            {
+                altitude_max = 1d;
+                altitude_step = 1d;
+            }
+
+            uint altitude_n = (uint)Math.Ceiling(altitude_max / altitude_step);
+            available_thrust_.ResetCache(0d, altitude_step, altitude_n);
+        }
+
         public void Reset(
             double altitude_step,
             double velocity_step, double velocity_max,

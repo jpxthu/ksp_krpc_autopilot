@@ -9,6 +9,8 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 
+using LandingAdjustBurnStatus = KrpcAutoPilot.Control.LandingAdjustBurnStatus;
+
 namespace Test
 {
     class Program
@@ -77,48 +79,70 @@ namespace Test
             var north_split_event = conn.KRPC().AddEvent(north_split_expr);
             lock (north_split_event.Condition)
                 north_split_event.Wait();
+            engine_north.Active = false;
+            engine_south.Active = false;
             vessel.Control.ActivateNextStage();
 
             Vessel vessel_north = engine_north.Part.Vessel;
             Vessel vessel_south = engine_south.Part.Vessel;
-            sc.ActiveVessel = vessel_south;
-            vessel_north.Control.Throttle = 0.1f;
-            vessel_north.Control.RCS = true;
-            vessel_north.Control.Right = -1f;
-            vessel_north.Control.Up = -1f;
-            vessel_south.Control.Throttle = 0.1f;
-            vessel_south.Control.RCS = true;
-            vessel_south.Control.Right = 1f;
-            vessel_south.Control.Up = -1f;
-            Thread.Sleep(300);
+            //sc.ActiveVessel = vessel_south;
             vessel_north.Control.Throttle = 0f;
-            vessel_north.Control.Right = 0f;
+            vessel_north.Control.RCS = true;
+            //vessel_north.Control.Right = -1f;
+            vessel_north.Control.Up = -1f;
             vessel_south.Control.Throttle = 0f;
-            vessel_south.Control.Right = 0f;
-            Thread.Sleep(1700);
+            vessel_south.Control.RCS = true;
+            //vessel_south.Control.Right = -1f;
+            vessel_south.Control.Up = 1f;
+            Thread.Sleep(500);
+            //vessel_north.Control.Throttle = 0f;
+            //vessel_north.Control.Right = 0f;
+            //vessel_south.Control.Throttle = 0f;
+            //vessel_south.Control.Right = 0f;
+            //Thread.Sleep(1500);
             vessel_north.Control.Up = 0f;
             vessel_south.Control.Up = 0f;
+            engine_north.Active = true;
+            engine_south.Active = true;
             engine_north.GimbalLimit = 1f;
             engine_south.GimbalLimit = 1f;
 
             // Recycle
             double tar_altitude = 205d;
+            LandingAdjustBurnStatus landingAdjustBurnStatusNorth = LandingAdjustBurnStatus.UNAVAILABEL;
+            LandingAdjustBurnStatus landingAdjustBurnStatusSouth = LandingAdjustBurnStatus.UNAVAILABEL;
+            bool landingAdjustBurn = false;
             Thread recycle_north_thread = new Thread(() => VesselControl.Recycle(
                 conn, sc, vessel_north, KrpcAutoPilot.Control.RcsLayout.TOP, data,
                 new Vector3d(body.PositionAtAltitude(
                     KrpcAutoPilot.Constants.Position.VAB_TOP_EAST.Lat,
                     KrpcAutoPilot.Constants.Position.VAB_TOP_EAST.Lng,
                     tar_altitude, body.ReferenceFrame)),
-                tar_altitude));
-            recycle_north_thread.Start();
+                tar_altitude,
+                0d,
+                ref landingAdjustBurnStatusNorth,
+                ref landingAdjustBurn));
             Thread recycle_south_thread = new Thread(() => VesselControl.Recycle(
                 conn, sc, vessel_south, KrpcAutoPilot.Control.RcsLayout.TOP, data,
                 new Vector3d(body.PositionAtAltitude(
                     KrpcAutoPilot.Constants.Position.VAB_TOP_WEST.Lat,
                     KrpcAutoPilot.Constants.Position.VAB_TOP_WEST.Lng,
                     tar_altitude, body.ReferenceFrame)),
-                tar_altitude));
+                tar_altitude,
+                Math.PI,
+                ref landingAdjustBurnStatusSouth,
+                ref landingAdjustBurn));
+            recycle_north_thread.Start();
             recycle_south_thread.Start();
+
+            while (true)
+            {
+                Thread.Sleep(100);
+                if (landingAdjustBurnStatusNorth == LandingAdjustBurnStatus.WAITING &&
+                    landingAdjustBurnStatusSouth == LandingAdjustBurnStatus.WAITING)
+                    break;
+            }
+            landingAdjustBurn = true;
 
             recycle_north_thread.Join();
             recycle_south_thread.Join();

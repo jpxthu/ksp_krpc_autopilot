@@ -11,11 +11,12 @@ namespace KrpcAutoPilot
             SYMMETRICAL     // 对称
         }
 
-        private enum LandingStage
+        public enum LandingAdjustBurnStatus
         {
-            ADJUST,
-            S1,
-            S2
+            UNAVAILABEL,
+            WAITING,
+            EXECUTING,
+            FINISHED
         }
 
         private const double LANDING_MAX_THROTTLE = 0.95d;
@@ -25,7 +26,6 @@ namespace KrpcAutoPilot
         private double landing_adjust_throttle;
         private double landing_lift_angle;
         private Vector3d landing_rcs_tar_acc_i;
-        private LandingStage landing_stage;
         private bool rcs_altitude_control;
     }
 }

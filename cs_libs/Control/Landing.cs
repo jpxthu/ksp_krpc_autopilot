@@ -16,7 +16,6 @@ namespace KrpcAutoPilot
             landing_adjust_throttle = -1d;
             landing_lift_angle = 0d;
             landing_rcs_tar_acc_i = Vector3d.Zero;
-            landing_stage = LandingStage.ADJUST;
             RcsAltitudeControl = true;
 
             Trajectory.CalculateStart(tar_altitude: tar_altitude);
@@ -26,33 +25,63 @@ namespace KrpcAutoPilot
         /// <summary>
         /// 高空调整姿态和点火，调整下落轨迹
         /// </summary>
+        /// <param name="tar_pos">Meters in Body.ReferenceFrame</param>
+        /// <param name="tar_altitude">Meters</param>
+        /// <param name="heading">Radian</param>
+        /// <param name="could_burn"></param>
         /// <returns></returns>
-        public bool AdjustLandingPosition(Vector3d tar_pos, double tar_altitude, double heading = 0d)
+        public LandingAdjustBurnStatus AdjustLandingPosition(
+            Vector3d tar_pos, double tar_altitude, double heading, bool could_burn)
         {
-            if (!Trajectory.ResultAvailable)
-                return false;
-            var tar_v = TargetPositionCompensate(tar_pos, tar_altitude) - Trajectory.ImpactPositionWithAction;
-            var distance = tar_v.Length();
+            if (!Trajectory.ResultAvailable || !Trajectory.ResultWithoutActionAvailable)
+            {
+                Command.SetThrottle(0d);
+                Command.SetTargetDirection(State.Vessel.SurfUp);
+                return LandingAdjustBurnStatus.UNAVAILABEL;
+            }
+
+            Vector3d tar_v;
+            if (!Trajectory.ResultStable)
+            {
+                tar_v = TargetPositionCompensate(tar_pos, tar_altitude) - Trajectory.ImpactPositionWithoutAction;
+                tar_v = VectorHorizonPart(tar_v).Norm();
+                Command.SetTargetDirection(tar_v);
+                Command.SetThrottle(0d);
+                return LandingAdjustBurnStatus.UNAVAILABEL;
+            }
+
+            tar_v = TargetPositionCompensate(tar_pos, tar_altitude) - Trajectory.ImpactPositionWithAction;
+            double distance = tar_v.Length();
             tar_v = VectorHorizonPart(tar_v).Norm();
-            var dir_error = State.Vessel.Direction * tar_v;
-            var tar_t = Math.Clamp(distance / 15000d, 0.2d, 0.6d) *
-                Math.Max(0d, (dir_error - 0.95d) * 20d);
-            //Conn.Drawing().Clear();
-            //Conn.Drawing().AddDirection(
-            //    SpaceCenter.TransformDirection(tar_v.ToTuple(), ActiveVessel.Orbit.Body.ReferenceFrame, ActiveVessel.ReferenceFrame),
-            //    ActiveVessel.ReferenceFrame);
+            double dir_error = State.Vessel.Direction * tar_v;
+            double tar_t = Math.Clamp(distance / 15000d, 0.2d, 0.6d);
+            double tar_t_ratio =
+                Math.Min(Math.Max(0d, (dir_error - 0.95d) * 20d), Math.Max(0d, 1d - State.Vessel.AngularVelocity.Length() * 20d));
+            tar_t *= tar_t_ratio;
             Command.SetHeading(heading);
             if (distance < 1000d && tar_v * State.Vessel.Direction < 0.985d)
             {
                 Command.SetThrottle(0d);
-                return true;
+                return LandingAdjustBurnStatus.FINISHED;
             }
             else
             {
-                //Console.WriteLine(distance);
                 Command.SetTargetDirection(tar_v);
-                Command.SetThrottle(tar_t);
-                return false;
+                if (tar_t_ratio < 0.01d)
+                {
+                    Command.SetThrottle(0d);
+                    return LandingAdjustBurnStatus.UNAVAILABEL;
+                }
+                else if (could_burn)
+                {
+                    Command.SetThrottle(tar_t);
+                    return LandingAdjustBurnStatus.EXECUTING;
+                }
+                else
+                {
+                    Command.SetThrottle(0d);
+                    return LandingAdjustBurnStatus.WAITING;
+                }
             }
         }
 
@@ -63,17 +92,18 @@ namespace KrpcAutoPilot
         /// <param name="tar_altitude">目标海拔</param>
         /// <param name="rcs_layout">RCS 布局</param>
         /// <param name="gear_deploy_time">着陆架部署需要时间</param>
+        /// <param name="heading">Radian</param>
         /// <returns></returns>
         public bool Landing(
             Vector3d tar_pos, double tar_altitude, RcsLayout rcs_layout,
             double gear_deploy_time,
-            double heading=0d)
+            double heading = 0d)
         {
             //if (RcsAltitudeControl && Trajectory.ResultAvailable && Trajectory.NextBurnTime < 0.5d)
             //    RcsAltitudeControl = false;
             tar_pos = TargetPositionCompensate(tar_pos, tar_altitude);
 
-            //Conn.Drawing().Clear();
+            Conn.Drawing().Clear();
             if (State.Vessel.Altitude - tar_altitude < 10000d && -State.Vessel.VelocityUp < 20d)
             {
                 LandingDirection(tar_pos, tar_altitude);

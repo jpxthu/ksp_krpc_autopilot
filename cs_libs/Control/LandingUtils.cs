@@ -61,8 +61,9 @@ namespace KrpcAutoPilot
 
         private Vector3d TargetPositionCompensate(Vector3d tar_pos, double tar_altitude)
         {
-            Vector3d dir = VectorHorizonPart(State.Vessel.Velocity.Norm());
-            double ratio = Math.Min(200d, (State.Vessel.Altitude - tar_altitude) / 50d);
+            //Vector3d dir = State.Vessel.VelocityHorizon.Norm();
+            Vector3d dir = -State.Vessel.SurfEast;
+            double ratio = Math.Min(200d, (State.Vessel.Altitude - tar_altitude) / 100d);
             return tar_pos + dir * ratio;
         }
     }

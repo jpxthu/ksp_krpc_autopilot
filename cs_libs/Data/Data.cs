@@ -41,6 +41,11 @@ namespace KrpcAutoPilot.Data
     public class Vessel
     {
         public double Altitude { get; set; }
+        /// <summary>
+        /// The angular velocity as a vector. The magnitude of the vector is the rotational
+        /// speed of the vessel, in radians per second. The direction of the vector indicates
+        /// the axis of rotation, using the right-hand rule.
+        /// </summary>
         public Vector3d AngularVelocity { get; set; }
         /// <summary>
         /// The maximum force that the currently active RCS thrusters can generate. Returns
@@ -106,6 +111,8 @@ namespace KrpcAutoPilot.Data
         /// </summary>
         public double VacuumSpecificImpulse { get; set; }
         public Vector3d Velocity { get; set; }
+        public Vector3d VelocityHorizon { get; set; }
+        public double VelocityHorizonMag { get; set; }
         public double VelocityMag { get; set; }
         public double VelocityUp { get; set; }
     }

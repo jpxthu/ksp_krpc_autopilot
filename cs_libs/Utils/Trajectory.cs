@@ -173,6 +173,7 @@ namespace KrpcAutoPilot.Utils
             t_ave_ = Math.Max(time_used, 1d);
             t_ratio_ *= (t_ave_ / 100d - 1d) * 0.2d + 1d;
             t_ratio_ = Math.Clamp(t_ratio_, 0.01d, 100d);
+            ResultStable = t_ratio_ < 0.1d;
 
             return pos;
         }
@@ -224,7 +225,7 @@ namespace KrpcAutoPilot.Utils
                 if (!Data.Available ||
                     !State.Available)
                 {
-                    ResultAvailable = false;
+                    ResultAvailable = ResultStable = false;
                     continue;
                 }
                 if (ut_before_calc_ == Data.UT)
@@ -274,9 +275,10 @@ namespace KrpcAutoPilot.Utils
                 if (ut_calc == Data.UT)
                     continue;
                 ut_calc = Data.UT;
-                Vector3d ImpactPositionWithoutAction = CalculateImpactPosition();
+                ImpactPositionWithoutAction = CalculateImpactPosition();
+                ResultWithoutActionAvailable = true;
                 res_update_mut_.WaitOne();
-                if (ut_calc - ImpactPositionWithActionCalcUt > (double)CalculateGap / 1000d * 2d)
+                if (ut_calc - ImpactPositionWithActionCalcUt > CalculateGap / 1000d * 2d)
                     ImpactPositionWithAction = ImpactPositionWithoutAction + impact_pos_diff_;
                 res_update_mut_.ReleaseMutex();
             }
@@ -289,7 +291,7 @@ namespace KrpcAutoPilot.Utils
             if (calculate_gap_in_ms.HasValue)
                 CalculateGap = calculate_gap_in_ms.Value;
             calculate_ = true;
-            ResultAvailable = false;
+            ResultAvailable = ResultWithoutActionAvailable = ResultStable = false;
             calculate_thread_.Start();
             speed_up_thread_.Start();
         }
@@ -297,12 +299,17 @@ namespace KrpcAutoPilot.Utils
         public void CalculateStop()
         {
             calculate_ = false;
-            ResultAvailable = false;
+            ResultAvailable = ResultWithoutActionAvailable = ResultStable = false;
         }
 
         public void ReCache(double altitude_step, double velocity_step, double velocity_max)
         {
             cache_.Reset(altitude_step, velocity_step, velocity_max, LiftEstimationAngle);
+        }
+
+        public void ReCacheAvailableThrust(double altitude_step = 200d)
+        {
+            cache_.ResetAvailableShrust(altitude_step);
         }
 
         public Trajectory(
@@ -314,7 +321,7 @@ namespace KrpcAutoPilot.Utils
             State = state;
             TarAltitude = tar_altitude;
             CalculateGap = calculate_gap_in_ms;
-            ResultAvailable = false;
+            ResultAvailable = ResultWithoutActionAvailable = ResultStable = false;
             calculate_thread_ = new Thread(CalculateFunction);
             speed_up_thread_ = new Thread(SpeedUpFunction);
             Planner = planner;
@@ -327,7 +334,7 @@ namespace KrpcAutoPilot.Utils
                 conn, sc, body, vessel,
                 200d, 20d, 5000d, LiftEstimationAngle);
 
-            PredictTime = 2d;
+            //PredictTime = 2d;
         }
 
         public Trajectory(
@@ -363,15 +370,17 @@ namespace KrpcAutoPilot.Utils
         public double TarAltitude { get; set; }
         public int CalculateGap { get; set; }
 
-        private CircularBuffer<Tuple<double, Vector3d>> history_res_ = new CircularBuffer<Tuple<double, Vector3d>>(5);
+        /*private CircularBuffer<Tuple<double, Vector3d>> history_res_ = new CircularBuffer<Tuple<double, Vector3d>>(5);
         public double PredictTime { get; set; }
-        public Vector3d PredictImpactPositionWithAction { get; private set; }
+        public Vector3d PredictImpactPositionWithAction { get; private set; }*/
 
         public Vector3d ImpactPositionWithAction { get; private set; }
         public Vector3d ImpactPositionWithoutAction { get; private set; }
         public Vector3d EnterAtmosphereDirection { get; private set; }
         public double ImpactPositionWithActionCalcUt { get; private set; }
         public bool ResultAvailable { get; private set; }
+        public bool ResultWithoutActionAvailable { get; private set; }
+        public bool ResultStable { get; private set; }
         public Func<SimulationData, SimulationResult> Planner { get; set; }
         public double NextBurnTime { get; private set; }
         public double ImpactTime { get; private set; }

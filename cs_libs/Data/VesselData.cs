@@ -126,6 +126,8 @@ namespace KrpcAutoPilot.Data
             Vessel.SurfUp = Vessel.Position.Norm();
             Vessel.SurfEast = Vector3d.Cross(Vessel.SurfUp, new Vector3d(0d, 1d, 0d)).Norm();
             Vessel.SurfNorth = Vector3d.Cross(Vessel.SurfEast, Vessel.SurfUp);
+            Vessel.VelocityHorizon = Vessel.Velocity - Vessel.Velocity * Vessel.SurfUp * Vessel.SurfUp;
+            Vessel.VelocityHorizonMag = Vessel.VelocityHorizon.Length();
             Vessel.VelocityMag = Vessel.Velocity.Length();
             Vessel.VelocityUp = Vessel.Velocity * Vessel.SurfUp;
 

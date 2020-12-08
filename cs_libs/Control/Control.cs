@@ -64,7 +64,7 @@ namespace KrpcAutoPilot
         private Vessel ActiveVessel { get; }
         private CelestialBody OrbitBody { get; }
         private Service SpaceCenter { get; }
-        private Data.CommonData Data { get; }
+        public Data.CommonData Data { get; }
         public Data.VesselData State { get; }
         public Command Command { get; }
         public Trajectory Trajectory { get; }

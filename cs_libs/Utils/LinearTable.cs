@@ -24,14 +24,7 @@ namespace KrpcAutoPilot.Utils
             double min, double step, uint n,
             Func<double, double> action = null)
         {
-            x_min_ = min;
-            x_max_ = min + step * (n - 1);
-            x_step_ = step;
-            n_ = n;
-            values_ = new double[n];
-            has_value_ = new bool[n];
-            for (uint i = 0; i < n; i++)
-                has_value_[i] = false;
+            ResetCache(min, step, n);
             if (action == null)
             {
                 has_action_ = false;
@@ -41,6 +34,18 @@ namespace KrpcAutoPilot.Utils
                 has_action_ = true;
                 action_ = action;
             }
+        }
+
+        public void ResetCache(double min, double step, uint n)
+        {
+            x_min_ = min;
+            x_max_ = min + step * (n - 1);
+            x_step_ = step;
+            n_ = n;
+            values_ = new double[n];
+            has_value_ = new bool[n];
+            for (uint i = 0; i < n; i++)
+                has_value_[i] = false;
         }
 
         private double GetValue_(uint i, double x)

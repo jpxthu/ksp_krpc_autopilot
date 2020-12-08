@@ -16,6 +16,9 @@ namespace KrpcAutoPilot
             DirectionVector = v.Norm();
         }
 
+        /// <summary>
+        /// </summary>
+        /// <param name="heading">Radian</param>
         public void SetHeading(double heading)
         {
             Heading = heading;
@@ -61,6 +64,9 @@ namespace KrpcAutoPilot
         }
 
         public Vector3d DirectionVector { get; private set; }
+        /// <summary>
+        /// Radian
+        /// </summary>
         public double Heading { get; private set; }
         public double RcsRight { get; private set; }
         public double RcsUp { get; private set; }
