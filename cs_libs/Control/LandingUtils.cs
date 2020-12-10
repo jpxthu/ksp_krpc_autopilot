@@ -23,14 +23,18 @@ namespace KrpcAutoPilot
         private double EngineMaxHorizonForce()
         {
             double engine_gimbal_thrust_limit = 0d;
-            foreach (var engine in ActiveVessel.Parts.Engines)
+            try
             {
-                if (engine.Active)
+                foreach (var engine in ActiveVessel.Parts.Engines)
                 {
-                    engine_gimbal_thrust_limit += Convert.ToDouble(engine.Thrust) *
-                        Math.Sin(Convert.ToDouble(engine.GimbalRange) / 180d * Math.PI);
+                    if (engine.Active)
+                    {
+                        engine_gimbal_thrust_limit += Convert.ToDouble(engine.Thrust) *
+                            Math.Sin(Convert.ToDouble(engine.GimbalRange) / 180d * Math.PI);
+                    }
                 }
             }
+            catch (Exception) { }
             return engine_gimbal_thrust_limit;
         }
 
@@ -63,7 +67,7 @@ namespace KrpcAutoPilot
         {
             //Vector3d dir = State.Vessel.VelocityHorizon.Norm();
             Vector3d dir = -State.Vessel.SurfEast;
-            double ratio = Math.Min(200d, (State.Vessel.Altitude - tar_altitude) / 100d);
+            double ratio = 0d;// Math.Min(200d, (State.Vessel.Altitude - tar_altitude) / 100d);
             return tar_pos + dir * ratio;
         }
     }

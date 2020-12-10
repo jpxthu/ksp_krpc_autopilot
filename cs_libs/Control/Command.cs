@@ -16,6 +16,11 @@ namespace KrpcAutoPilot
             DirectionVector = v.Norm();
         }
 
+        public void ReleaseTargetDirection()
+        {
+            DirectionVector = null;
+        }
+
         /// <summary>
         /// </summary>
         /// <param name="heading">Radian</param>

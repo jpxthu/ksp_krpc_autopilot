@@ -40,6 +40,11 @@ namespace KrpcAutoPilot.Data
 
     public class Vessel
     {
+        public Vessel(string name)
+        {
+            Name = name;
+        }
+
         public double Altitude { get; set; }
         /// <summary>
         /// The angular velocity as a vector. The magnitude of the vector is the rotational
@@ -93,6 +98,7 @@ namespace KrpcAutoPilot.Data
         /// respectively. This corresponds to the vessels reference frame (SpaceCenter.ReferenceFrame).
         /// </summary>
         public Vector3d MomentOfInertia { get; set; }
+        public string Name { get; }
         public Vector3d Position { get; set; }
         public Vector3d Right { get; set; }
         public Vector3d SurfEast { get; set; }

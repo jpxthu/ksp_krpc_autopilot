@@ -98,21 +98,21 @@ namespace KrpcAutoPilot
             //Conn.Drawing().AddDirection(
             //    SpaceCenter.TransformDirection(tar_pos_v.ToTuple(), OrbitBody.ReferenceFrame, ActiveVessel.ReferenceFrame),
             //    ActiveVessel.ReferenceFrame);
-            Conn.Drawing().AddDirection(
-                SpaceCenter.TransformDirection(tar_dir.ToTuple(), OrbitBody.ReferenceFrame, ActiveVessel.ReferenceFrame),
-                ActiveVessel.ReferenceFrame,
-                30f);
-            Conn.Drawing().AddLine(
-                State.Vessel.Position.ToTuple(),
-                Trajectory.ImpactPositionWithAction.ToTuple(),
-                OrbitBody.ReferenceFrame);
-            Console.WriteLine("{0:0.0}\t{1:0}\t{2:0}\t{3:0.00}\t{4:0.00}\t{5:0.000}",
-                Trajectory.NextBurnTime,
-                Trajectory.LiftEstimationThrustAve,
-                Trajectory.LiftEstimationForceAve,
-                landing_lift_angle / Math.PI * 180d,
-                distance,
-                turn_angle);
+            //Conn.Drawing().AddDirection(
+            //    SpaceCenter.TransformDirection(tar_dir.ToTuple(), OrbitBody.ReferenceFrame, ActiveVessel.ReferenceFrame),
+            //    ActiveVessel.ReferenceFrame,
+            //    30f);
+            //Conn.Drawing().AddLine(
+            //    State.Vessel.Position.ToTuple(),
+            //    Trajectory.ImpactPositionWithAction.ToTuple(),
+            //    OrbitBody.ReferenceFrame);
+            //Console.WriteLine("{0:0.0}\t{1:0}\t{2:0}\t{3:0.00}\t{4:0.00}\t{5:0.000}",
+            //    Trajectory.NextBurnTime,
+            //    Trajectory.LiftEstimationThrustAve,
+            //    Trajectory.LiftEstimationForceAve,
+            //    landing_lift_angle / Math.PI * 180d,
+            //    distance,
+            //    turn_angle);
 
             return false;
         }

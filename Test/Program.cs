@@ -38,8 +38,8 @@ namespace Test
             {
                 data.Update();
                 control.UpdateData();
-                control.Command.SetTargetDirection(1, 0, 0);
-                control.Command.SetHeading(0);
+                control.Command.SetTargetDirection(0, 0, -1);
+                control.Command.SetHeading(180);
                 control.Execute();
                 Thread.Sleep(100);
             }*/
@@ -61,39 +61,39 @@ namespace Test
             Engine engine_south = vessel.Parts.Engines.Where(p => p.Part.Tag == "engine_south").ToList().First();
             Part tank_north = vessel.Parts.WithTag("tank_north").ToList().First();
             Part tank_south = vessel.Parts.WithTag("tank_south").ToList().First();
+            Part tank_main = vessel.Parts.WithTag("tank_main").ToList().First();
 
             // Launch
             engine_main.ThrustLimit = 0.6f;
-            //engine_main.GimbalLimit = 0.2f;
-            //engine_north.GimbalLimit = 0.2f;
-            //engine_south.GimbalLimit = 0.2f;
             Thread launch_thread = new Thread(() => VesselControl.Launch(conn, sc, vessel, data, 80000));
             launch_thread.Start();
 
-            // Splite
-            float north_fuel_throshold = 3000f;// tank_south.Resources.Max("LiquidFuel");
+            // Splite booster
+            float booster_fuel_throshold = 3000f;// tank_south.Resources.Max("LiquidFuel");
             var north_fuel = Connection.GetCall(() => tank_south.Resources.Amount("LiquidFuel"));
             var north_split_expr = Expression.LessThan(conn,
                 Expression.Call(conn, north_fuel),
-                Expression.ConstantFloat(conn, north_fuel_throshold));
+                Expression.ConstantFloat(conn, booster_fuel_throshold));
             var north_split_event = conn.KRPC().AddEvent(north_split_expr);
             lock (north_split_event.Condition)
                 north_split_event.Wait();
-            engine_north.Active = false;
-            engine_south.Active = false;
+            engine_main.ThrustLimit = 1f;
+            engine_north.ThrustLimit = 0f;
+            engine_south.ThrustLimit = 0f;
+            Thread.Sleep(1000);
             vessel.Control.ActivateNextStage();
 
             Vessel vessel_north = engine_north.Part.Vessel;
             Vessel vessel_south = engine_south.Part.Vessel;
-            //sc.ActiveVessel = vessel_south;
+            sc.ActiveVessel = vessel_north;
             vessel_north.Control.Throttle = 0f;
             vessel_north.Control.RCS = true;
             //vessel_north.Control.Right = -1f;
-            vessel_north.Control.Up = -1f;
+            vessel_north.Control.Up = 1f;
             vessel_south.Control.Throttle = 0f;
             vessel_south.Control.RCS = true;
             //vessel_south.Control.Right = -1f;
-            vessel_south.Control.Up = 1f;
+            vessel_south.Control.Up = -1f;
             Thread.Sleep(500);
             //vessel_north.Control.Throttle = 0f;
             //vessel_north.Control.Right = 0f;
@@ -102,12 +102,10 @@ namespace Test
             //Thread.Sleep(1500);
             vessel_north.Control.Up = 0f;
             vessel_south.Control.Up = 0f;
-            engine_north.Active = true;
-            engine_south.Active = true;
-            engine_north.GimbalLimit = 1f;
-            engine_south.GimbalLimit = 1f;
+            engine_north.ThrustLimit = 1f;
+            engine_south.ThrustLimit = 1f;
 
-            // Recycle
+            // Recycle booster
             double tar_altitude = 205d;
             LandingAdjustBurnStatus landingAdjustBurnStatusNorth = LandingAdjustBurnStatus.UNAVAILABEL;
             LandingAdjustBurnStatus landingAdjustBurnStatusSouth = LandingAdjustBurnStatus.UNAVAILABEL;
@@ -135,20 +133,64 @@ namespace Test
             recycle_north_thread.Start();
             recycle_south_thread.Start();
 
-            while (true)
+            new Thread(o =>
             {
-                Thread.Sleep(100);
-                if (landingAdjustBurnStatusNorth == LandingAdjustBurnStatus.WAITING &&
-                    landingAdjustBurnStatusSouth == LandingAdjustBurnStatus.WAITING)
-                    break;
+                while (true)
+                {
+                    Thread.Sleep(100);
+                    if (landingAdjustBurnStatusNorth == LandingAdjustBurnStatus.WAITING &&
+                        landingAdjustBurnStatusSouth == LandingAdjustBurnStatus.WAITING)
+                        break;
+                }
+                landingAdjustBurn = true;
+            }).Start();
+
+            // Recycle first stage
+            Thread recycle_main_thread = null;
+            if (NeedRecycleMainVessel(conn, tank_main))
+            {
+                vessel.Control.Throttle = 0f;
+                Thread.Sleep(1000);
+                vessel.Control.ActivateNextStage();
+
+                Vessel vessel_main = engine_main.Part.Vessel;
+                recycle_main_thread = new Thread(() => VesselControl.Recycle(
+                    conn, sc, vessel_main, KrpcAutoPilot.Control.RcsLayout.TOP, data,
+                    new Vector3d(sc.Vessels.Where(v => v.Name == "landing_ship").First().Position(body.ReferenceFrame)),
+                    20d,
+                    0d,
+                    ref landingAdjustBurnStatusNorth,
+                    ref landingAdjustBurn));
+                recycle_main_thread.Start();
             }
-            landingAdjustBurn = true;
 
             recycle_north_thread.Join();
             recycle_south_thread.Join();
+            if (!(recycle_main_thread is null))
+                recycle_main_thread.Join();
             should_exit = true;
 
             conn.Dispose();
+        }
+
+        static bool NeedRecycleMainVessel(Connection conn, Part tank)
+        {
+            float main_throshold = 2000f;
+            Stream<float> fuel_stream = conn.AddStream(() => tank.Resources.Amount("LiquidFuel"));
+            try
+            {
+                while (true)
+                {
+                    float fuel = fuel_stream.Get();
+                    if (fuel <= main_throshold)
+                        return true;
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return false;
+            }
         }
     }
 }

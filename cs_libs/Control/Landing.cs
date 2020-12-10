@@ -45,6 +45,8 @@ namespace KrpcAutoPilot
             {
                 tar_v = TargetPositionCompensate(tar_pos, tar_altitude) - Trajectory.ImpactPositionWithoutAction;
                 tar_v = VectorHorizonPart(tar_v).Norm();
+                if (tar_v * State.Vessel.Direction < -0.5d)
+                    tar_v = State.Vessel.SurfUp;
                 Command.SetTargetDirection(tar_v);
                 Command.SetThrottle(0d);
                 return LandingAdjustBurnStatus.UNAVAILABEL;
@@ -55,11 +57,12 @@ namespace KrpcAutoPilot
             tar_v = VectorHorizonPart(tar_v).Norm();
             double dir_error = State.Vessel.Direction * tar_v;
             double tar_t = Math.Clamp(distance / 15000d, 0.2d, 0.6d);
-            double tar_t_ratio =
+            double tar_t_ratio = Command.Throttle > 0.1d ? 1d :
                 Math.Min(Math.Max(0d, (dir_error - 0.95d) * 20d), Math.Max(0d, 1d - State.Vessel.AngularVelocity.Length() * 20d));
             tar_t *= tar_t_ratio;
             Command.SetHeading(heading);
-            if (distance < 1000d && tar_v * State.Vessel.Direction < 0.985d)
+            if (Command.Throttle > 0.1d &&
+                VectorHorizonPart(State.Vessel.Direction).Norm() * tar_v < 0.985d)
             {
                 Command.SetThrottle(0d);
                 return LandingAdjustBurnStatus.FINISHED;
@@ -103,7 +106,7 @@ namespace KrpcAutoPilot
             //    RcsAltitudeControl = false;
             tar_pos = TargetPositionCompensate(tar_pos, tar_altitude);
 
-            Conn.Drawing().Clear();
+            //Conn.Drawing().Clear();
             if (State.Vessel.Altitude - tar_altitude < 10000d && -State.Vessel.VelocityUp < 20d)
             {
                 LandingDirection(tar_pos, tar_altitude);

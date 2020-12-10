@@ -71,7 +71,7 @@ namespace KrpcAutoPilot.Utils
         }
         public Vector3d Norm()
         {
-            return new Vector3d(X, Y, Z) / System.Math.Max(1e-9, Length());
+            return new Vector3d(X, Y, Z) / Math.Max(1e-9, Length());
         }
         public Tuple<double, double, double> ToTuple()
         {

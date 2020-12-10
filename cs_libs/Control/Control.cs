@@ -19,23 +19,34 @@ namespace KrpcAutoPilot
                 Command.SetRcsRight(0d);
                 Command.SetRcsUp(0d);
                 Command.SetThrottle(0d);
+                Command.ReleaseTargetDirection();
                 Execute();
             }
         }
 
-        public void Execute()
+        public bool Execute()
         {
-            ActiveVessel.Control.Throttle = Convert.ToSingle(Command.Throttle);
-            ActiveVessel.Control.Forward = Convert.ToSingle(Command.RcsForward);
-            ActiveVessel.Control.Right = Convert.ToSingle(Command.RcsRight);
-            ActiveVessel.Control.Up = Convert.ToSingle(Command.RcsUp);
+            try
+            {
+                ActiveVessel.Control.Throttle = Convert.ToSingle(Command.Throttle);
+                ActiveVessel.Control.Forward = Convert.ToSingle(Command.RcsForward);
+                ActiveVessel.Control.Right = Convert.ToSingle(Command.RcsRight);
+                ActiveVessel.Control.Up = Convert.ToSingle(Command.RcsUp);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(
+                    "Error when executing. Vessel <{0}> may out of distance or crashed. Error message: {1}",
+                    VesselName, e.Message);
+                return false;
+            }
 
-            AltitudeControl();
+            return AtitudeControl();
         }
 
-        public void UpdateData()
+        public bool UpdateData()
         {
-            State.Update();
+            return State.Update();
         }
 
         public Control(
@@ -55,6 +66,7 @@ namespace KrpcAutoPilot
                 data, State,
                 conn, SpaceCenter, OrbitBody, vessel, 0.0, 100,
                 LandingSimThrust);
+            VesselName = vessel.Name;
 
             AltitudeControllerInit();
         }
@@ -64,9 +76,10 @@ namespace KrpcAutoPilot
         private Vessel ActiveVessel { get; }
         private CelestialBody OrbitBody { get; }
         private Service SpaceCenter { get; }
-        public Data.CommonData Data { get; }
-        public Data.VesselData State { get; }
+        private Data.CommonData Data { get; }
+        private Data.VesselData State { get; }
         public Command Command { get; }
         public Trajectory Trajectory { get; }
+        public string VesselName { get; }
     }
 }

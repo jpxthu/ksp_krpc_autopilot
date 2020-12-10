@@ -3143,11 +3143,6 @@
              Throws an exception if the auto-pilot has not been engaged.
              </summary>
             </member>
-        <member name="P:KRPC.Client.Services.SpaceCenter.AutoPilot.PitchKpGain">
-             <summary>
-             Gains for the pitch PID Kp.
-             </summary>
-            </member>
         <member name="P:KRPC.Client.Services.SpaceCenter.AutoPilot.PitchPIDGains">
              <summary>
              Gains for the pitch PID controller.
@@ -3171,11 +3166,6 @@
              <summary>
              The error, in degrees, between the vessels current and target roll.
              Throws an exception if the auto-pilot has not been engaged or no target roll is set.
-             </summary>
-            </member>
-        <member name="P:KRPC.Client.Services.SpaceCenter.AutoPilot.RollKpGain">
-             <summary>
-             Gains for the roll PID Kp.
              </summary>
             </member>
         <member name="P:KRPC.Client.Services.SpaceCenter.AutoPilot.RollPIDGains">
@@ -3241,11 +3231,6 @@
              The target time to peak used to autotune the PID controllers.
              A vector of three times, in seconds, for each of the pitch, roll and yaw axes.
              Defaults to 3 seconds for each axis.
-             </summary>
-            </member>
-        <member name="P:KRPC.Client.Services.SpaceCenter.AutoPilot.YawKpGain">
-             <summary>
-             Gains for the yaw PID Kp.
              </summary>
             </member>
         <member name="P:KRPC.Client.Services.SpaceCenter.AutoPilot.YawPIDGains">
@@ -4567,7 +4552,21 @@
              Takes the given pressure into account.
              </summary>
              <param name="pressure">Atmospheric pressure in atmospheres</param>
-             <returns></returns>
+            </member>
+        <member name="M:KRPC.Client.Services.SpaceCenter.Engine.MaxThrustAt(System.Double)">
+             <summary>
+             The amount of thrust, in Newtons, that would be produced by the engine
+             when activated and fueled, with its throttle and throttle limiter set to 100%.
+             Takes the given pressure into account.
+             </summary>
+             <param name="pressure">Atmospheric pressure in atmospheres</param>
+            </member>
+        <member name="M:KRPC.Client.Services.SpaceCenter.Engine.SpecificImpulseAt(System.Double)">
+             <summary>
+             The specific impulse of the engine under the given pressure, in seconds. Returns zero
+             if the engine is not active.
+             </summary>
+             <param name="pressure">Atmospheric pressure in atmospheres</param>
             </member>
         <member name="M:KRPC.Client.Services.SpaceCenter.Engine.ToggleMode">
              <summary>
@@ -7447,10 +7446,10 @@
              <summary>
              Gets the total available thrust that can be produced by the vessel's
              active engines, in Newtons. This is computed by summing
-             <see cref="M:SpaceCenter.Engine.AvailableThrust" /> for every active engine in the vessel.
+             <see cref="M:SpaceCenter.Engine.AvailableThrustAt" /> for every active engine in the vessel.
+             Takes the given pressure into account.
              </summary>
              <param name="pressure">Atmospheric pressure in atmospheres</param>
-             <returns></returns>
             </member>
         <member name="M:KRPC.Client.Services.SpaceCenter.Vessel.BoundingBox(KRPC.Client.Services.SpaceCenter.ReferenceFrame)">
              <summary>
@@ -7478,6 +7477,15 @@
              Reference frame. Defaults to the vessel's surface reference frame
              (<see cref="M:SpaceCenter.Vessel.SurfaceReferenceFrame" />).
              </param>
+            </member>
+        <member name="M:KRPC.Client.Services.SpaceCenter.Vessel.MaxThrustAt(System.Double)">
+             <summary>
+             The total maximum thrust that can be produced by the vessel's active
+             engines, in Newtons. This is computed by summing
+             <see cref="M:SpaceCenter.Engine.MaxThrustAt" /> for every active engine.
+             Takes the given pressure into account.
+             </summary>
+             <param name="pressure">Atmospheric pressure in atmospheres</param>
             </member>
         <member name="M:KRPC.Client.Services.SpaceCenter.Vessel.Position(KRPC.Client.Services.SpaceCenter.ReferenceFrame)">
              <summary>
@@ -7509,6 +7517,14 @@
              <returns>The rotation as a quaternion of the form <math>(x, y, z, w)</math>.</returns>
              <param name="referenceFrame">The reference frame that the returned
              rotation is in.</param>
+            </member>
+        <member name="M:KRPC.Client.Services.SpaceCenter.Vessel.SpecificImpulseAt(System.Double)">
+             <summary>
+             The combined specific impulse of all active engines, in seconds. This is computed using the formula
+             <a href="https://wiki.kerbalspaceprogram.com/wiki/Specific_impulse#Multiple_engines">described here</a>.
+             Takes the given pressure into account.
+             </summary>
+             <param name="pressure">Atmospheric pressure in atmospheres</param>
             </member>
         <member name="M:KRPC.Client.Services.SpaceCenter.Vessel.Velocity(KRPC.Client.Services.SpaceCenter.ReferenceFrame)">
              <summary>

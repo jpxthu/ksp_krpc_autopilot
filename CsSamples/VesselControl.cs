@@ -24,10 +24,12 @@ namespace CsSamples
 
             while (true)
             {
-                control.UpdateData();
+                if (!control.UpdateData())
+                    break;
                 if (control.LaunchIntoApoapsis(apoapsis, 0d))
                     break;
-                control.Execute();
+                if (!control.Execute())
+                    break;
                 Thread.Sleep(100);
             }
 
@@ -58,11 +60,13 @@ namespace CsSamples
             Console.WriteLine("Adjust landing position");
             while (true)
             {
-                control.UpdateData();
+                if (!control.UpdateData())
+                    break;
                 landing_adjust_burn_status = control.AdjustLandingPosition(tar_pos, tar_altitude, heading, landing_adjust_could_burn);
                 if (landing_adjust_burn_status == KrpcAutoPilot.Control.LandingAdjustBurnStatus.FINISHED)
                     break;
-                control.Execute();
+                if (!control.Execute())
+                    break;
                 Thread.Sleep(100);
             }
 
@@ -78,10 +82,12 @@ namespace CsSamples
 
             while (true)
             {
-                control.UpdateData();
+                if (!control.UpdateData())
+                    break;
                 if (control.Landing(tar_pos, tar_altitude, rcs_layout, 5d, heading))
                     break;
-                control.Execute();
+                if (!control.Execute())
+                    break;
                 Thread.Sleep(100);
             }
 
@@ -108,10 +114,12 @@ namespace CsSamples
 
             while (true)
             {
-                control.UpdateData();
+                if (!control.UpdateData())
+                    break;
                 if (control.Hover(tar_altitude, tar_pos, rcs_layout))
                     break;
-                control.Execute();
+                if (!control.Execute())
+                    break;
                 Thread.Sleep(100);
             }
 

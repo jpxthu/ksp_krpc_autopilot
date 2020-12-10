@@ -85,7 +85,7 @@ namespace KrpcAutoPilot.Data
 
     public class VesselData
     {
-        public void Update()
+        public bool Update()
         {
             // Body
             Body.AtmosphereDepth = Streams.AtmosphereDepth.Get();
@@ -103,23 +103,34 @@ namespace KrpcAutoPilot.Data
             Orbit.TimeToApoapsis = Streams.TimeToApoapsis.Get();
 
             // Vessel
-            Vessel.Altitude = Streams.Altitude.Get();
-            Vessel.AngularVelocity = new Vector3d(Streams.AngularVelocity.Get());
-            Vessel.AvailableRCSForce = new TupleV3d(Streams.AvailableRCSForce.Get());
-            Vessel.AvailableThrust = Streams.AvailableThrust.Get();
-            Vessel.AvailableTorque = new TupleV3d(Streams.AvailableTorque.Get());
-            Vessel.Direction = new Vector3d(Streams.Direction.Get());
-            Vessel.DryMass = Streams.DryMass.Get();
-            Vessel.Forward = new Vector3d(Streams.Forward.Get());
-            Vessel.Mass = Streams.Mass.Get();
-            Vessel.MaxVacuumThrust = Streams.MaxVacuumThrust.Get();
-            Vessel.MomentOfInertia = new Vector3d(Streams.MomentOfInertia.Get());
-            Vessel.Position = new Vector3d(Streams.Position.Get());
-            Vessel.Right = new Vector3d(Streams.Right.Get());
-            Vessel.Thrust = Streams.Thrust.Get();
-            Vessel.Up = new Vector3d(Streams.Up.Get());
-            Vessel.VacuumSpecificImpulse = Streams.VacuumSpecificImpulse.Get();
-            Vessel.Velocity = new Vector3d(Streams.Velocity.Get());
+            try
+            {
+                Vessel.Altitude = Streams.Altitude.Get();
+                Vessel.AngularVelocity = new Vector3d(Streams.AngularVelocity.Get());
+                Vessel.AvailableRCSForce = new TupleV3d(Streams.AvailableRCSForce.Get());
+                Vessel.AvailableThrust = Streams.AvailableThrust.Get();
+                Vessel.AvailableTorque = new TupleV3d(Streams.AvailableTorque.Get());
+                Vessel.Direction = new Vector3d(Streams.Direction.Get());
+                Vessel.DryMass = Streams.DryMass.Get();
+                Vessel.Forward = new Vector3d(Streams.Forward.Get());
+                Vessel.Mass = Streams.Mass.Get();
+                Vessel.MaxVacuumThrust = Streams.MaxVacuumThrust.Get();
+                Vessel.MomentOfInertia = new Vector3d(Streams.MomentOfInertia.Get());
+                Vessel.Position = new Vector3d(Streams.Position.Get());
+                Vessel.Right = new Vector3d(Streams.Right.Get());
+                Vessel.Thrust = Streams.Thrust.Get();
+                Vessel.Up = new Vector3d(Streams.Up.Get());
+                Vessel.VacuumSpecificImpulse = Streams.VacuumSpecificImpulse.Get();
+                Vessel.Velocity = new Vector3d(Streams.Velocity.Get());
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(
+                    "Error when update states. Vessel <{0}> may out of distance or crashed. " +
+                    "Error message: {1}", Vessel.Name, e.Message);
+                Available = false;
+                return false;
+            }
 
             Vessel.Gravity = Body.GravitationalParameter / Vessel.Position.LengthSquared();
             Vessel.MaxFuelRate = Vessel.MaxVacuumThrust / Vessel.VacuumSpecificImpulse / Constants.Common.GRAVITY_ON_KERBIN;
@@ -132,15 +143,16 @@ namespace KrpcAutoPilot.Data
             Vessel.VelocityUp = Vessel.Velocity * Vessel.SurfUp;
 
             Available = true;
+            return true;
         }
 
-        public VesselData(Connection conn, Service sc, KRPC.Client.Services.SpaceCenter.Vessel active_vessel)
+        public VesselData(Connection conn, Service sc, KRPC.Client.Services.SpaceCenter.Vessel vessel)
         {
-            Streams = new VesselStreams(conn, sc, active_vessel);
+            Streams = new VesselStreams(conn, sc, vessel);
             Body = new Body();
             Environment = new Environment();
             Orbit = new Orbit();
-            Vessel = new Vessel();
+            Vessel = new Vessel(vessel.Name);
             Available = false;
         }
 

@@ -1,0 +1,1 @@
+- event lock 所属的 vessel 如果超出距离或坠毁，所有的 stream 都不会再更新，get 的返回值不会再变化。

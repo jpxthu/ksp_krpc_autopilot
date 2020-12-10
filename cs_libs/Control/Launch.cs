@@ -20,7 +20,6 @@ namespace KrpcAutoPilot
         public bool LaunchIntoApoapsis(double tar_apoapsis, double heading, double max_q = 15000d)
         {
             double tar_pitch = Math.Sqrt(Math.Max(0d, 1d - (State.Orbit.Apoapsis - State.Body.Radius) / tar_apoapsis)) * Math.PI / 2d;
-            Console.WriteLine(tar_pitch);
 
             double q = Common.DynamicPressure(
                 State.Environment.StaticPressure,

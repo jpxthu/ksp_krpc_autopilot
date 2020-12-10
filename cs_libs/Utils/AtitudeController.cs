@@ -2,7 +2,7 @@
 
 namespace KrpcAutoPilot.Utils
 {
-    public class AltitudeController
+    public class AtitudeController
     {
         public Vector3d MaxPitchAngAcc { get; set; }
         public Vector3d MaxYawAngAcc { get; set; }
@@ -17,7 +17,7 @@ namespace KrpcAutoPilot.Utils
         /// <summary>
         /// </summary>
         /// <param name="max_act">(0, 1]</param>
-        public AltitudeController(double linear_k, double max_act, double kp, double ki = 0d)
+        public AtitudeController(double linear_k, double max_act, double kp, double ki = 0d)
         {
             Reset(linear_k, max_act, kp, ki);
         }
