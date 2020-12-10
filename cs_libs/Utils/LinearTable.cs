@@ -15,16 +15,17 @@ namespace KrpcAutoPilot.Utils
 
         public LinearTable(
             double min, double step, uint n,
-            Func<double, double> action = null)
+            Func<double, double> action = null,
+            bool cache_all = false)
         {
-            Reset(min, step, n, action);
+            Reset(min, step, n, action, cache_all);
         }
 
         public void Reset(
             double min, double step, uint n,
-            Func<double, double> action = null)
+            Func<double, double> action = null,
+            bool cache_all = false)
         {
-            ResetCache(min, step, n);
             if (action == null)
             {
                 has_action_ = false;
@@ -34,9 +35,10 @@ namespace KrpcAutoPilot.Utils
                 has_action_ = true;
                 action_ = action;
             }
+            ResetCache(min, step, n, cache_all);
         }
 
-        public void ResetCache(double min, double step, uint n)
+        public void ResetCache(double min, double step, uint n, bool cache_all = false)
         {
             x_min_ = min;
             x_max_ = min + step * (n - 1);
@@ -44,8 +46,19 @@ namespace KrpcAutoPilot.Utils
             n_ = n;
             values_ = new double[n];
             has_value_ = new bool[n];
-            for (uint i = 0; i < n; i++)
-                has_value_[i] = false;
+            if (cache_all && has_action_)
+            {
+                for (uint i = 0; i < n; i++)
+                {
+                    values_[i] = action_(min + step * i);
+                    has_value_[i] = true;
+                }
+            }
+            else
+            {
+                for (uint i = 0; i < n; i++)
+                    has_value_[i] = false;
+            }
         }
 
         private double GetValue_(uint i, double x)

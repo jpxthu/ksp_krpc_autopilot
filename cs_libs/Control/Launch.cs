@@ -29,7 +29,7 @@ namespace KrpcAutoPilot
 
             Vector3d dir = State.Vessel.SurfEast * Math.Cos(tar_pitch) + State.Vessel.SurfUp * Math.Sin(tar_pitch);
             Command.SetTargetDirection(dir);
-            Command.SetHeading(heading);
+            Command.SetHeadingAngle(heading);
             Command.SetThrottle(throttle);
             //Conn.Drawing().Clear();
             //Conn.Drawing().AddDirection(

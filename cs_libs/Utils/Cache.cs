@@ -35,7 +35,7 @@ namespace KrpcAutoPilot.Utils
             Reset(altitude_step, velocity_step, velocity_max, aoa);
         }
 
-        public void ResetAtm(double altitude_step)
+        public void ResetAtm(double altitude_step, bool cache_all = true)
         {
             double altitude_max;
             if (body_.HasAtmosphere)
@@ -49,10 +49,10 @@ namespace KrpcAutoPilot.Utils
             }
 
             uint altitude_n = (uint)Math.Ceiling(altitude_max / altitude_step);
-            atm_.ResetCache(0d, altitude_step, altitude_n);
+            atm_.ResetCache(0d, altitude_step, altitude_n, cache_all);
         }
 
-        public void ResetAvailableShrust(double altitude_step)
+        public void ResetAvailableShrust(double altitude_step, bool cache_all = true)
         {
             double altitude_max;
             if (body_.HasAtmosphere)
@@ -66,13 +66,14 @@ namespace KrpcAutoPilot.Utils
             }
 
             uint altitude_n = (uint)Math.Ceiling(altitude_max / altitude_step);
-            available_thrust_.ResetCache(0d, altitude_step, altitude_n);
+            available_thrust_.ResetCache(0d, altitude_step, altitude_n, cache_all);
         }
 
         public void Reset(
             double altitude_step,
             double velocity_step, double velocity_max,
-            double aoa)
+            double aoa,
+            bool init_simple = true)
         {
             double aoa_cos = Math.Cos(aoa);
             double aoa_sin = Math.Sin(aoa);
@@ -108,7 +109,8 @@ namespace KrpcAutoPilot.Utils
                 {
                     double atm = body_.PressureAt(altitude) / Constants.Common.STANDARD_ATMOSPHERIC_PRESSURE;
                     return atm;
-                });
+                },
+                init_simple);
 
             available_thrust_ = new LinearTable(
                 0d, altitude_step, altitude_n,
@@ -117,7 +119,8 @@ namespace KrpcAutoPilot.Utils
                     double atm = atm_[altitude];
                     double thr = vessel_.AvailableThrustAt(atm);
                     return thr;
-                });
+                },
+                init_simple);
 
             density_ = new LinearTable(
                 0d, altitude_step, altitude_n,
@@ -125,7 +128,8 @@ namespace KrpcAutoPilot.Utils
                 {
                     double density = body_.DensityAt(altitude);
                     return density;
-                });
+                },
+                init_simple);
 
             sim_drift_ = new BiLinearTable(
                 0d, altitude_step, altitude_n,

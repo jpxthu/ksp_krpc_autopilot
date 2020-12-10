@@ -36,6 +36,18 @@ namespace CsSamples
             control.DisEngage();
         }
 
+        private static void SwitchEngineMode(Vessel vessel)
+        {
+            foreach (var e in vessel.Parts.Engines)
+            {
+                if (e.Active)
+                {
+                    e.ToggleMode();
+                    break;
+                }
+            }
+        }
+
         public static void Recycle(
             Connection connection,
             Service space_center,
@@ -48,11 +60,15 @@ namespace CsSamples
         {
             KrpcAutoPilot.Control control = new KrpcAutoPilot.Control(connection, space_center, data, vessel);
             control.UpdateData();
-            control.Command.SetHeading(Math.PI);
+            control.Command.SetHeadingAngle(Math.PI);
 
             control.Engage();
 
             vessel.Control.RCS = true;
+
+            SwitchEngineMode(vessel);
+            control.Trajectory.ReCacheAvailableThrust();
+            SwitchEngineMode(vessel);
 
             Console.WriteLine("Landing init");
             control.LandingInit(tar_altitude);
@@ -62,7 +78,7 @@ namespace CsSamples
             {
                 if (!control.UpdateData())
                     break;
-                landing_adjust_burn_status = control.AdjustLandingPosition(tar_pos, tar_altitude, heading, landing_adjust_could_burn);
+                landing_adjust_burn_status = control.AdjustLandingPosition(tar_pos, tar_altitude, landing_adjust_could_burn);
                 if (landing_adjust_burn_status == KrpcAutoPilot.Control.LandingAdjustBurnStatus.FINISHED)
                     break;
                 if (!control.Execute())
@@ -70,15 +86,7 @@ namespace CsSamples
                 Thread.Sleep(100);
             }
 
-            foreach (var e in vessel.Parts.Engines)
-            {
-                if (e.Active)
-                {
-                    e.ToggleMode();
-                    break;
-                }
-            }
-            control.Trajectory.ReCacheAvailableThrust();
+            SwitchEngineMode(vessel);
 
             while (true)
             {

@@ -6,6 +6,12 @@ namespace KrpcAutoPilot
 {
     public class Command
     {
+        public enum Type
+        {
+            STABLE,
+            VALUE
+        }
+
         public void SetTargetDirection(double x, double y, double z)
         {
             DirectionVector = new Vector3d(x, y, z).Norm();
@@ -21,12 +27,18 @@ namespace KrpcAutoPilot
             DirectionVector = null;
         }
 
+        public void StableHeading()
+        {
+            HeadingMode = Type.STABLE;
+        }
+
         /// <summary>
         /// </summary>
-        /// <param name="heading">Radian</param>
-        public void SetHeading(double heading)
+        /// <param name="angle">Radian</param>
+        public void SetHeadingAngle(double angle)
         {
-            Heading = heading;
+            HeadingAngle = angle;
+            HeadingMode = Type.VALUE;
         }
 
         /// <summary>
@@ -64,15 +76,16 @@ namespace KrpcAutoPilot
 
         public Command()
         {
-            Heading = 0d;
+            HeadingMode = Type.STABLE;
             RcsRight = RcsUp = RcsForward = Throttle = 0d;
         }
 
         public Vector3d DirectionVector { get; private set; }
+        public Type HeadingMode { get; private set; }
         /// <summary>
         /// Radian
         /// </summary>
-        public double Heading { get; private set; }
+        public double HeadingAngle { get; private set; }
         public double RcsRight { get; private set; }
         public double RcsUp { get; private set; }
         public double RcsForward { get; private set; }

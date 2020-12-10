@@ -94,7 +94,7 @@ namespace Test
             vessel_south.Control.RCS = true;
             //vessel_south.Control.Right = -1f;
             vessel_south.Control.Up = -1f;
-            Thread.Sleep(500);
+            Thread.Sleep(1000);
             //vessel_north.Control.Throttle = 0f;
             //vessel_north.Control.Right = 0f;
             //vessel_south.Control.Throttle = 0f;

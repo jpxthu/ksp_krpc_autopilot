@@ -31,8 +31,13 @@ namespace KrpcAutoPilot
         /// <param name="could_burn"></param>
         /// <returns></returns>
         public LandingAdjustBurnStatus AdjustLandingPosition(
-            Vector3d tar_pos, double tar_altitude, double heading, bool could_burn)
+            Vector3d tar_pos, double tar_altitude, bool could_burn, double? heading = null)
         {
+            if (heading.HasValue)
+                Command.SetHeadingAngle(heading.Value);
+            else
+                Command.StableHeading();
+
             if (!Trajectory.ResultAvailable || !Trajectory.ResultWithoutActionAvailable)
             {
                 Command.SetThrottle(0d);
@@ -60,7 +65,7 @@ namespace KrpcAutoPilot
             double tar_t_ratio = Command.Throttle > 0.1d ? 1d :
                 Math.Min(Math.Max(0d, (dir_error - 0.95d) * 20d), Math.Max(0d, 1d - State.Vessel.AngularVelocity.Length() * 20d));
             tar_t *= tar_t_ratio;
-            Command.SetHeading(heading);
+
             if (Command.Throttle > 0.1d &&
                 VectorHorizonPart(State.Vessel.Direction).Norm() * tar_v < 0.985d)
             {
@@ -100,7 +105,7 @@ namespace KrpcAutoPilot
         public bool Landing(
             Vector3d tar_pos, double tar_altitude, RcsLayout rcs_layout,
             double gear_deploy_time,
-            double heading = 0d)
+            double? heading = null)
         {
             //if (RcsAltitudeControl && Trajectory.ResultAvailable && Trajectory.NextBurnTime < 0.5d)
             //    RcsAltitudeControl = false;
@@ -123,7 +128,10 @@ namespace KrpcAutoPilot
                 LandingRcs(tar_pos, tar_altitude, rcs_layout);
             }
             LandingThrust(tar_altitude);
-            Command.SetHeading(heading);
+            if (heading.HasValue)
+                Command.SetHeadingAngle(heading.Value);
+            else
+                Command.StableHeading();
 
             return false;
         }
