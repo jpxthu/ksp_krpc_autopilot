@@ -1,5 +1,6 @@
 ﻿using KRPC.Client;
 using KRPC.Client.Services.SpaceCenter;
+using KrpcAutoPilot;
 using KrpcAutoPilot.Utils;
 using System;
 using System.Threading;
@@ -9,13 +10,14 @@ namespace CsSamples
     public class VesselControl
     {
         public static void Launch(
+            string vessel_name,
+            CommonData common_data,
             Connection connection,
             Service space_center,
             Vessel vessel,
-            KrpcAutoPilot.Data.CommonData data,
             double apoapsis)
         {
-            KrpcAutoPilot.Control control = new KrpcAutoPilot.Control(connection, space_center, data, vessel);
+            KrpcAutoPilot.Control control = new KrpcAutoPilot.Control(vessel_name, common_data, connection, space_center, vessel);
             control.UpdateData();
 
             control.Engage();
@@ -33,14 +35,28 @@ namespace CsSamples
                 Thread.Sleep(100);
             }
 
+            control.LaunchIntoPeriapsisInit();
+
+            while (true)
+            {
+                if (!control.UpdateData())
+                    break;
+                if (control.LaunchIntoPeriapsis(apoapsis))
+                    break;
+                if (!control.Execute())
+                    break;
+                Thread.Sleep(100);
+            }
+
             control.DisEngage();
+            control.Dispose();
         }
 
         private static void SwitchEngineMode(Vessel vessel)
         {
             foreach (var e in vessel.Parts.Engines)
             {
-                if (e.Active)
+                if (e.Active && e.HasModes)
                 {
                     e.ToggleMode();
                     break;
@@ -49,16 +65,17 @@ namespace CsSamples
         }
 
         public static void Recycle(
+            string vessel_name,
+            CommonData common_data,
             Connection connection,
             Service space_center,
             Vessel vessel,
             KrpcAutoPilot.Control.RcsLayout rcs_layout,
-            KrpcAutoPilot.Data.CommonData data,
             Vector3d tar_pos, double tar_altitude, double heading,
             ref KrpcAutoPilot.Control.LandingAdjustBurnStatus landing_adjust_burn_status,
             ref bool landing_adjust_could_burn)
         {
-            KrpcAutoPilot.Control control = new KrpcAutoPilot.Control(connection, space_center, data, vessel);
+            KrpcAutoPilot.Control control = new KrpcAutoPilot.Control(vessel_name, common_data, connection, space_center, vessel);
             control.UpdateData();
             control.Command.SetHeadingAngle(Math.PI);
 
@@ -66,6 +83,7 @@ namespace CsSamples
 
             vessel.Control.RCS = true;
 
+            //vessel.Control.Brakes = true;
             SwitchEngineMode(vessel);
             control.Trajectory.ReCacheAvailableThrust();
             SwitchEngineMode(vessel);
@@ -100,20 +118,21 @@ namespace CsSamples
             }
 
             control.DisEngage();
-
-            control.Trajectory.CalculateStop();
+            control.Dispose();
+            //vessel.Control.Brakes = false;
         }
 
         public static void Hover(
+            string vessel_name,
+            CommonData common_data,
             Connection connection,
             Service space_center,
             Vessel vessel,
-            KrpcAutoPilot.Data.CommonData data,
             double tar_altitude,
             Vector3d tar_pos = null,
             KrpcAutoPilot.Control.RcsLayout rcs_layout = KrpcAutoPilot.Control.RcsLayout.TOP)
         {
-            KrpcAutoPilot.Control control = new KrpcAutoPilot.Control(connection, space_center, data, vessel);
+            KrpcAutoPilot.Control control = new KrpcAutoPilot.Control(vessel_name, common_data, connection, space_center, vessel);
             control.UpdateData();
 
             control.Engage();
@@ -132,6 +151,7 @@ namespace CsSamples
             }
 
             control.DisEngage();
+            control.Dispose();
         }
     }
 }

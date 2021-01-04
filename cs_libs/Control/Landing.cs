@@ -60,6 +60,7 @@ namespace KrpcAutoPilot
             tar_v = TargetPositionCompensate(tar_pos, tar_altitude) - Trajectory.ImpactPositionWithAction;
             double distance = tar_v.Length();
             tar_v = VectorHorizonPart(tar_v).Norm();
+            //tar_v = tar_v * Math.Cos(10d / 180d * Math.PI) + State.Vessel.SurfUp * Math.Sin(10d / 180d * Math.PI);
             double dir_error = State.Vessel.Direction * tar_v;
             double tar_t = Math.Clamp(distance / 15000d, 0.2d, 0.6d);
             double tar_t_ratio = Command.Throttle > 0.1d ? 1d :
@@ -109,7 +110,7 @@ namespace KrpcAutoPilot
         {
             //if (RcsAltitudeControl && Trajectory.ResultAvailable && Trajectory.NextBurnTime < 0.5d)
             //    RcsAltitudeControl = false;
-            tar_pos = TargetPositionCompensate(tar_pos, tar_altitude);
+            tar_pos = TargetPositionCompensate2(tar_pos, tar_altitude);
 
             //Conn.Drawing().Clear();
             if (State.Vessel.Altitude - tar_altitude < 10000d && -State.Vessel.VelocityUp < 20d)

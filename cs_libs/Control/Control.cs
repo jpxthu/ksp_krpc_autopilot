@@ -50,36 +50,55 @@ namespace KrpcAutoPilot
         }
 
         public Control(
+            string vessel_name,
+            CommonData common_data,
             Connection conn,
             Service sc,
-            Data.CommonData data,
             Vessel vessel)
         {
             Conn = conn;
             ActiveVessel = vessel;
             OrbitBody = vessel.Orbit.Body;
             SpaceCenter = conn.SpaceCenter();
-            Data = data;
-            State = new Data.VesselData(conn, sc, vessel);
+
+            CommonData = common_data;
+            State = new VesselData(vessel_name, common_data, conn, sc, vessel);
+
             Command = new Command();
             Trajectory = new Trajectory(
-                data, State,
+                vessel_name, common_data, State,
                 conn, SpaceCenter, OrbitBody, vessel, 0.0, 100,
                 LandingSimThrust);
-            VesselName = vessel.Name;
+
+            VesselName = vessel_name;
 
             AltitudeControllerInit();
         }
 
+        public void Dispose()
+        {
+            Trajectory.CalculateStop();
+
+            State.Dispose();
+        }
+
+        ~Control()
+        {
+            Console.WriteLine("{0}: control stopped.", VesselName);
+        }
+
         //private Service SpaceCenter { get; }
-        private Connection Conn { get; }
         private Vessel ActiveVessel { get; }
+        private Connection Conn { get; }
         private CelestialBody OrbitBody { get; }
         private Service SpaceCenter { get; }
-        private Data.CommonData Data { get; }
-        private Data.VesselData State { get; }
+
+        private CommonData CommonData { get; }
+        private VesselData State { get; }
+
         public Command Command { get; }
         public Trajectory Trajectory { get; }
+
         public string VesselName { get; }
     }
 }

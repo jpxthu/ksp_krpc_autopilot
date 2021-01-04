@@ -6,18 +6,25 @@ namespace KrpcAutoPilot
     public partial class Control
     {
         private AtitudeController atitude_controller_;
+        private double altitude_controller_roll_int_;
+        private double altitude_controller_roll_ki_;
 
         private void AltitudeControllerInit(
             double linear_k = 0.8d,
             double max_act = 0.6d,
             double kp = 1.5d,
-            double ki = 0d)
+            double ki = 0.02d)
         {
             atitude_controller_ = new AtitudeController(linear_k, max_act, kp, ki);
+            altitude_controller_roll_int_ = 0d;
+            altitude_controller_roll_ki_ = ki;
         }
 
         private bool AtitudeControlSetRPY(double roll, double pitch, double yaw)
         {
+            Command.Roll = roll;
+            Command.Pitch = pitch;
+            Command.Yaw = yaw;
             try
             {
                 ActiveVessel.Control.Pitch = Convert.ToSingle(pitch);
@@ -67,7 +74,9 @@ namespace KrpcAutoPilot
                 LinearPlanner.Hover(roll_ang, 1d, roll_torque * 0.6d, roll_torque * 0.6d, out vel, out acc);
             }
             double vel_err = State.Vessel.AngularVelocity * State.Vessel.Forward - vel;
-            double roll = Math.Clamp((acc + vel_err * 2d) / roll_torque, -1d, 1d);
+            double roll = (acc + vel_err * 2d) / roll_torque;
+            altitude_controller_roll_int_ = Math.Clamp(altitude_controller_roll_int_ + roll * altitude_controller_roll_ki_, -0.1d, 0.1d);
+            roll = Math.Clamp(roll + altitude_controller_roll_int_, -1d, 1d);
 
             double max_py = Math.Max(0.2d, 1d - Math.Abs(roll));
             pitch = Math.Clamp(pitch, -max_py, max_py);

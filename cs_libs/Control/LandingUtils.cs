@@ -50,12 +50,15 @@ namespace KrpcAutoPilot
 
         private void RcsSetByForce(double force_right, double force_up)
         {
-            Command.SetRcsRight(force_right >= 0d ?
+            double limit = Math.Clamp((1d - Math.Max(Math.Abs(Command.Pitch), Math.Abs(Command.Yaw))) * 2d, 0d, 1d);
+            double right = force_right >= 0d ?
                 force_right / State.Vessel.AvailableRCSForce.Item1.X :
-                -force_right / State.Vessel.AvailableRCSForce.Item2.X);
-            Command.SetRcsUp(force_up >= 0d ?
+                -force_right / State.Vessel.AvailableRCSForce.Item2.X;
+            double up = force_up >= 0d ?
                 -force_up / State.Vessel.AvailableRCSForce.Item2.Z :
-                force_up / State.Vessel.AvailableRCSForce.Item1.Z);
+                force_up / State.Vessel.AvailableRCSForce.Item1.Z;
+            Command.SetRcsRight(Math.Clamp(right, -limit, limit));
+            Command.SetRcsUp(Math.Clamp(up, -limit, limit));
         }
 
         private Vector3d VectorHorizonPart(Vector3d v)
@@ -66,8 +69,16 @@ namespace KrpcAutoPilot
         private Vector3d TargetPositionCompensate(Vector3d tar_pos, double tar_altitude)
         {
             //Vector3d dir = State.Vessel.VelocityHorizon.Norm();
-            Vector3d dir = -State.Vessel.SurfEast;
-            double ratio = 0d;// Math.Min(200d, (State.Vessel.Altitude - tar_altitude) / 100d);
+            Vector3d dir = VectorHorizonPart(tar_pos - State.Vessel.Position);
+            double ratio = 0.3d;// Math.Min(200d, (State.Vessel.Altitude - tar_altitude) / 100d);
+            return tar_pos + dir * ratio;
+        }
+
+        private Vector3d TargetPositionCompensate2(Vector3d tar_pos, double tar_altitude)
+        {
+            Vector3d dir = State.Vessel.VelocityHorizon;
+            dir = dir.Norm() * Math.Min(2d, dir.Length());
+            double ratio = Math.Clamp((State.Vessel.Altitude - tar_altitude - 2000d) / 200d, 0d, 100d);
             return tar_pos + dir * ratio;
         }
     }

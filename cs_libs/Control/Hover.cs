@@ -13,12 +13,6 @@ namespace KrpcAutoPilot
 
         private bool HoverThrust(double tar_altitude)
         {
-            if (landing_adjust_throttle > 0d)
-            {
-                Command.SetThrottle(landing_adjust_throttle);
-                return false;
-            }
-
             double vessel_up_ratio = State.Vessel.VelocityMag > 100d ?
                 -State.Vessel.Velocity.Norm() * State.Vessel.SurfUp :
                 State.Vessel.Direction * State.Vessel.SurfUp;

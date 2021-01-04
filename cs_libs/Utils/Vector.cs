@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace KrpcAutoPilot.Utils
 {
@@ -38,6 +39,12 @@ namespace KrpcAutoPilot.Utils
             X = v.Item1;
             Y = v.Item2;
             Z = v.Item3;
+        }
+        public Vector3d(double[] v)
+        {
+            X = v[0];
+            Y = v[1];
+            Z = v[2];
         }
         public Vector3d(Vector3d v)
         {

@@ -90,5 +90,9 @@ namespace KrpcAutoPilot
         public double RcsUp { get; private set; }
         public double RcsForward { get; private set; }
         public double Throttle { get; private set; }
+
+        public double Pitch { get; set; }
+        public double Roll { get; set; }
+        public double Yaw { get; set; }
     }
 }

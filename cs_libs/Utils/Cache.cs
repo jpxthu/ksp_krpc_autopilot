@@ -20,6 +20,7 @@ namespace KrpcAutoPilot.Utils
         private readonly Vessel vessel_;
 
         public Cache(
+            VesselData vessel_data,
             Connection conn,
             Service sc,
             CelestialBody body,
@@ -32,7 +33,7 @@ namespace KrpcAutoPilot.Utils
             sc_ = sc;
             body_ = body;
             vessel_ = vessel;
-            Reset(altitude_step, velocity_step, velocity_max, aoa);
+            Reset(vessel_data, altitude_step, velocity_step, velocity_max, aoa);
         }
 
         public void ResetAtm(double altitude_step, bool cache_all = true)
@@ -70,6 +71,7 @@ namespace KrpcAutoPilot.Utils
         }
 
         public void Reset(
+            VesselData vessel_data,
             double altitude_step,
             double velocity_step, double velocity_max,
             double aoa,
@@ -95,13 +97,13 @@ namespace KrpcAutoPilot.Utils
             var flight = vessel_.Flight(body_.ReferenceFrame);
             double radius = body_.EquatorialRadius;
 
-            var stream_pos = conn_.AddStream(() => vessel_.Position(body_.ReferenceFrame));
+            /*var stream_pos = conn_.AddStream(() => vessel_.Position(body_.ReferenceFrame));
             var stream_backward = conn_.AddStream(() => sc_.TransformDirection(
                 new Tuple<double, double, double>(0, -1, 0),
                 vessel_.ReferenceFrame, body_.ReferenceFrame));
             var stream_right = conn_.AddStream(() => sc_.TransformDirection(
                 new Tuple<double, double, double>(1, 0, 0),
-                vessel_.ReferenceFrame, body_.ReferenceFrame));
+                vessel_.ReferenceFrame, body_.ReferenceFrame));*/
 
             atm_ = new LinearTable(
                 0d, altitude_step, altitude_n,
@@ -136,10 +138,10 @@ namespace KrpcAutoPilot.Utils
                 0d, velocity_step, velocity_n,
                 (double altitude, double velocity) =>
                 {
-                    Vector3d pos_now = new Vector3d(stream_pos.Get());
-                    Vector3d backward = new Vector3d(stream_backward.Get());
-                    Vector3d pos = pos_now.Norm() * (radius + altitude);
-                    Vector3d vel_backward = velocity * backward;
+                    /*Vector3d pos_now = new Vector3d(stream_pos.Get());
+                    Vector3d backward = new Vector3d(stream_backward.Get());*/
+                    Vector3d pos = vessel_data.Vessel.Position.Norm() * (radius + altitude);
+                    Vector3d vel_backward = -velocity * vessel_data.Vessel.Forward;
                     var sim = flight.SimulateAerodynamicForceAt(body_, pos.ToTuple(), vel_backward.ToTuple());
                     return new Vector3d(sim).Length();
                 });
@@ -149,14 +151,14 @@ namespace KrpcAutoPilot.Utils
                 0d, velocity_step, velocity_n,
                 (double altitude, double velocity) =>
                 {
-                    Vector3d pos_now = new Vector3d(stream_pos.Get());
+                    /*Vector3d pos_now = new Vector3d(stream_pos.Get());
                     Vector3d backward = new Vector3d(stream_backward.Get());
-                    Vector3d right = new Vector3d(stream_right.Get());
-                    Vector3d pos = pos_now.Norm() * (radius + altitude);
-                    Vector3d vel_backward = velocity * backward;
-                    Vector3d vel_tilt = velocity * (backward * aoa_cos + right * aoa_sin);
+                    Vector3d right = new Vector3d(stream_right.Get());*/
+                    Vector3d pos = vessel_data.Vessel.Position.Norm() * (radius + altitude);
+                    Vector3d vel_backward = -velocity * vessel_data.Vessel.Forward;
+                    Vector3d vel_tilt = velocity * (vessel_data.Vessel.Right * aoa_sin - vessel_data.Vessel.Forward * aoa_cos);
                     var sim = flight.SimulateAerodynamicForceAt(body_, pos.ToTuple(), vel_tilt.ToTuple());
-                    return -(new Vector3d(sim) * right);
+                    return -(new Vector3d(sim) * vessel_data.Vessel.Right);
                 });
         }
 

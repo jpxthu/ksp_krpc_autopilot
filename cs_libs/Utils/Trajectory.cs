@@ -51,11 +51,11 @@ namespace KrpcAutoPilot.Utils
             double dry_mass = State.Vessel.DryMass;
             Vector3d vel = State.Vessel.Velocity;
             Vector3d pos = State.Vessel.Position;
-            double altitude = pos.Length() - State.Body.Radius;
+            double altitude = pos.Length() - CommonData.Body.Radius;
             if (altitude <= TarAltitude)
                 return pos;
 
-            double atm_depth = State.Body.AtmosphereDepth;
+            double atm_depth = CommonData.Body.AtmosphereDepth;
             bool enter_atm = false;
             double next_burn_time = -1d;
 
@@ -72,7 +72,7 @@ namespace KrpcAutoPilot.Utils
             {
                 double atm = cache_.AtmAt(altitude);
                 double available_thrust = cache_.AvailableThrustAt(altitude);
-                Vector3d g = -pos * (State.Body.GravitationalParameter / Math.Pow(State.Body.Radius + altitude, 3));
+                Vector3d g = -pos * (CommonData.Body.GravitationalParameter / Math.Pow(CommonData.Body.Radius + altitude, 3));
                 double vel_mag = vel.Length();
 
                 var sim_data = new SimulationData
@@ -136,8 +136,8 @@ namespace KrpcAutoPilot.Utils
                 pos += vel * dt;
                 mass -= State.Vessel.MaxFuelRate * sim_res.Throttle * dt;
 
-                altitude = pos.Length() - State.Body.Radius;
-                if (State.Body.HasAtmosphere)
+                altitude = pos.Length() - CommonData.Body.Radius;
+                if (CommonData.Body.HasAtmosphere)
                 {
                     if (!enter_atm && altitude <= atm_depth && altitude_last >= atm_depth)
                     {
@@ -173,7 +173,7 @@ namespace KrpcAutoPilot.Utils
             t_ave_ = Math.Max(time_used, 1d);
             t_ratio_ *= (t_ave_ / 100d - 1d) * 0.2d + 1d;
             t_ratio_ = Math.Clamp(t_ratio_, 0.01d, 100d);
-            ResultStable = t_ratio_ < 0.1d;
+            ResultStable = t_ratio_ < 1d;
 
             return pos;
         }
@@ -183,14 +183,14 @@ namespace KrpcAutoPilot.Utils
             double mass = State.Vessel.Mass;
             Vector3d vel = State.Vessel.Velocity;
             Vector3d pos = State.Vessel.Position;
-            double altitude = pos.Length() - State.Body.Radius;
+            double altitude = pos.Length() - CommonData.Body.Radius;
             if (altitude <= TarAltitude)
                 return pos;
 
             double t = 0d;
             while (t < 1000d)
             {
-                Vector3d g = -pos * (State.Body.GravitationalParameter / Math.Pow(State.Body.Radius + altitude, 3));
+                Vector3d g = -pos * (CommonData.Body.GravitationalParameter / Math.Pow(CommonData.Body.Radius + altitude, 3));
                 double sim_drag_mag = vel.LengthSquared() * cache_.DensityAt(altitude) * drag_ratio_;
                 Vector3d sim_drag_acc = -sim_drag_mag / mass * vel.Norm();
                 Vector3d acc = g + sim_drag_acc;
@@ -203,7 +203,7 @@ namespace KrpcAutoPilot.Utils
                 double altitude_last = altitude;
                 pos += vel * dt;
 
-                altitude = pos.Length() - State.Body.Radius;
+                altitude = pos.Length() - CommonData.Body.Radius;
                 if (altitude <= TarAltitude)
                 {
                     double ratio = MathLib.InverseLerp(altitude_last, altitude, TarAltitude);
@@ -222,41 +222,31 @@ namespace KrpcAutoPilot.Utils
                 Thread.Sleep(1);
                 if (!calculate_)
                     break;
-                if (!Data.Available ||
+                if (!CommonData.Available ||
                     !State.Available)
                 {
                     ResultAvailable = ResultStable = false;
                     continue;
                 }
-                if (ut_before_calc_ == Data.UT)
+                if (ut_before_calc_ == CommonData.UT)
                     continue;
-                ut_before_calc_ = Data.UT;
+                ut_before_calc_ = CommonData.UT;
                 Vector3d pos_without_action = null;
                 Thread thread = new Thread(() => { pos_without_action = CalculateImpactPosition(); });
                 thread.Start();
                 Vector3d pos_with_action = CalculateImpactPositionWithAction();
                 thread.Join();
 
+                Vector3d change_rate = (pos_without_action - impact_pos_last_) / (ut_before_calc_ - ImpactPositionWithActionCalcUt);
+                impact_pos_with_action_change_rate_ += (change_rate - impact_pos_with_action_change_rate_) * 0.1d;
                 res_update_mut_.WaitOne();
                 ImpactPositionWithAction = pos_with_action;
                 ImpactPositionWithActionCalcUt = ut_before_calc_;
                 impact_pos_diff_ = pos_with_action - pos_without_action;
                 res_update_mut_.ReleaseMutex();
-                ResultAvailable = true;
+                impact_pos_last_ = pos_without_action;
 
-                /*history_res_.Push(new Tuple<double, Vector3d>(ut_before_calc_, pos_with_action));
-                if (history_res_.Filled)
-                {
-                    double[] ta = history_res_.Value.Select(o => o.Item1).ToArray();
-                    double[] xa = history_res_.Value.Select(o => o.Item2.X).ToArray();
-                    double[] ya = history_res_.Value.Select(o => o.Item2.Y).ToArray();
-                    double[] za = history_res_.Value.Select(o => o.Item2.Z).ToArray();
-                    double t = Data.UT + PredictTime;
-                    if (MathLib.LinearFit(ta, xa, t, out double x) &&
-                        MathLib.LinearFit(ta, ya, t, out double y) &&
-                        MathLib.LinearFit(ta, za, t, out double z))
-                        PredictImpactPositionWithAction = new Vector3d(x, y, z);
-                }*/
+                ResultAvailable = true;
             }
         }
 
@@ -269,12 +259,12 @@ namespace KrpcAutoPilot.Utils
                 if (!calculate_)
                     break;
                 if (!ResultAvailable ||
-                    !Data.Available ||
+                    !CommonData.Available ||
                     !State.Available)
                     continue;
-                if (ut_calc == Data.UT)
+                if (ut_calc == CommonData.UT)
                     continue;
-                ut_calc = Data.UT;
+                ut_calc = CommonData.UT;
                 ImpactPositionWithoutAction = CalculateImpactPosition();
                 ResultWithoutActionAvailable = true;
                 res_update_mut_.WaitOne();
@@ -304,7 +294,7 @@ namespace KrpcAutoPilot.Utils
 
         public void ReCache(double altitude_step, double velocity_step, double velocity_max)
         {
-            cache_.Reset(altitude_step, velocity_step, velocity_max, LiftEstimationAngle);
+            cache_.Reset(State, altitude_step, velocity_step, velocity_max, LiftEstimationAngle);
         }
 
         public void ReCacheAvailableThrust(double altitude_step = 200d)
@@ -313,11 +303,13 @@ namespace KrpcAutoPilot.Utils
         }
 
         public Trajectory(
-            Data.CommonData data, Data.VesselData state,
-            Connection conn, Service sc, CelestialBody body, Vessel vessel, double tar_altitude, int calculate_gap_in_ms,
+            string vessel_name, CommonData common_data, VesselData state,
+            Connection conn, Service sc, CelestialBody body, Vessel vessel,
+            double tar_altitude, int calculate_gap_in_ms,
             Func<SimulationData, SimulationResult> planner)
         {
-            Data = data;
+            VesselName = vessel_name;
+            CommonData = common_data;
             State = state;
             TarAltitude = tar_altitude;
             CalculateGap = calculate_gap_in_ms;
@@ -331,22 +323,21 @@ namespace KrpcAutoPilot.Utils
 
             //sw_ = new StreamWriter("t.tsv");
             cache_ = new Cache(
-                conn, sc, body, vessel,
+                state, conn, sc, body, vessel,
                 200d, 20d, 5000d, LiftEstimationAngle);
-
-            //PredictTime = 2d;
         }
 
         public Trajectory(
-            Data.CommonData data, Data.VesselData state,
-            Connection conn, Service sc, CelestialBody body, Vessel vessel, double tar_altitude, int calculate_gap_in_ms)
-            : this(data, state, conn, sc, body, vessel, tar_altitude, calculate_gap_in_ms,
+            string vessel_name, CommonData common_data, VesselData state,
+            Connection conn, Service sc, CelestialBody body, Vessel vessel,
+            double tar_altitude, int calculate_gap_in_ms)
+            : this(vessel_name, common_data, state, conn, sc, body, vessel, tar_altitude, calculate_gap_in_ms,
                   (data) => { return new SimulationResult(); })
         { }
 
         ~Trajectory()
         {
-            calculate_ = false;
+            Console.WriteLine("{0}: trajectory stopped.", VesselName);
 
             //sw_.Close();
         }
@@ -364,18 +355,19 @@ namespace KrpcAutoPilot.Utils
         private double t_ratio_ = 10d;
         private readonly Mutex res_update_mut_ = new Mutex();
         private Vector3d impact_pos_diff_ = Vector3d.Zero;
+        private Vector3d impact_pos_last_ = Vector3d.Zero;
 
-        private Data.CommonData Data { get; }
-        private Data.VesselData State { get; }
+        private string VesselName { get; }
+        private CommonData CommonData { get; }
+        private VesselData State { get; }
         public double TarAltitude { get; set; }
         public int CalculateGap { get; set; }
 
-        /*private CircularBuffer<Tuple<double, Vector3d>> history_res_ = new CircularBuffer<Tuple<double, Vector3d>>(5);
-        public double PredictTime { get; set; }
-        public Vector3d PredictImpactPositionWithAction { get; private set; }*/
+        private Vector3d impact_pos_with_action_change_rate_ = Vector3d.Zero;
 
         public Vector3d ImpactPositionWithAction { get; private set; }
         public Vector3d ImpactPositionWithoutAction { get; private set; }
+        public Vector3d ImpactPositionWithActionChangeRate { get => impact_pos_with_action_change_rate_; }
         public Vector3d EnterAtmosphereDirection { get; private set; }
         public double ImpactPositionWithActionCalcUt { get; private set; }
         public bool ResultAvailable { get; private set; }

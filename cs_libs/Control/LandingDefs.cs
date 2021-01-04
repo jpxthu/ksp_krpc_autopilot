@@ -1,4 +1,5 @@
 ﻿using KrpcAutoPilot.Utils;
+using System;
 
 namespace KrpcAutoPilot
 {
@@ -20,6 +21,7 @@ namespace KrpcAutoPilot
         }
 
         private const double LANDING_MAX_THROTTLE = 0.95d;
+        private const double LANDING_ADJUST2_MIN_TILT_RAD = 20d / 180d * Math.PI;
         private const double MIN_LANDING_VELOCITY = 5d;
 
         private bool gear_deployed;

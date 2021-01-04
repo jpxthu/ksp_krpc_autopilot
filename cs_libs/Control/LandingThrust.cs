@@ -13,16 +13,12 @@ namespace KrpcAutoPilot
             if (vessel_up_ratio < 0.5d)
                 return new Trajectory.SimulationResult();
 
-            double max_thrust_up = vessel_up_ratio * data.available_thrust;
+            double max_thrust_up = /*vessel_up_ratio */ data.available_thrust;
             double max_acc_up = Math.Max(0.01d, max_thrust_up / data.mass * LANDING_MAX_THROTTLE - data.g);
             double max_acc_down = data.g * LANDING_MAX_THROTTLE;
-            double tmp = data.altitude - data.tar_altitude;
-            LinearPlanner.Hover(tmp, 0.3d, max_acc_up, max_acc_down, out double tar_vel, out double tar_acc);
-            if (tar_vel > -MIN_LANDING_VELOCITY)
-            {
-                tar_vel = -MIN_LANDING_VELOCITY;
-                tar_acc = 0d;
-            }
+            LinearPlanner.OneWay(data.altitude - data.tar_altitude,
+                0.3d, max_acc_up, MIN_LANDING_VELOCITY,
+                out double tar_vel, out double tar_acc);
             tar_acc += (tar_vel - data.vel * up) * 2d;
             double tar_throttle = Math.Clamp((tar_acc + data.g) * data.mass / max_thrust_up, 0d, 1d);
 
