@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>TestingTools</name>
+    </assembly>
+    <members>
+        <member name="T:TestingTools.AutoLoadGame">
+             <summary>
+             Addon that automatically loads a save when the game starts
+             </summary>
+            </member>
+        <member name="P:TestingTools.AutoLoadGame.Game">
+             <summary>
+             Name of the game to load.
+             </summary>
+            </member>
+        <member name="P:TestingTools.AutoLoadGame.Save">
+             <summary>
+             Name of the save file to load.
+             </summary>
+            </member>
+        <member name="P:TestingTools.AutoLoadGame.Loaded">
+             <summary>
+             Whether the game has been loaded.
+             </summary>
+            </member>
+        <member name="M:TestingTools.AutoLoadGame.Awake">
+             <summary>
+             Initialize the addon.
+             </summary>
+            </member>
+        <member name="T:TestingTools.AutoSwitchVessel">
+             <summary>
+             Addon that automatically switches to a vessel when a save is loaded
+             </summary>
+            </member>
+        <member name="P:TestingTools.AutoSwitchVessel.Vessel">
+             <summary>
+             The vessel load.
+             </summary>
+            </member>
+        <member name="M:TestingTools.AutoSwitchVessel.Awake">
+             <summary>
+             Initialize the addon.
+             </summary>
+            </member>
+        <member name="T:TestingTools.OrbitTools">
+            
+            
+                 * The following is taken and adapted from the HyperEdit plugin licensed under the GPL, Copyright Erickson Swift, 2013.
+                 * As of writing, supported by Team HyperEdit, and Ezriilc.
+                 * Original HyperEdit concept and code by khyperia (no longer involved).
+                 </member>
+        <member name="T:TestingTools.TestingTools">
+             <summary>
+             kRPC testing tools.
+             </summary>
+            </member>
+        <member name="P:TestingTools.TestingTools.CurrentSave">
+             <summary>
+             Get the name of the current save game.
+             </summary>
+            </member>
+        <member name="M:TestingTools.TestingTools.LoadSave(System.String,System.String)">
+             <summary>
+             Load an existing save game.
+             </summary>
+            </member>
+        <member name="M:TestingTools.TestingTools.RemoveOtherVessels">
+             <summary>
+             Remove all vessels except the active vessel.
+             </summary>
+            </member>
+        <member name="M:TestingTools.TestingTools.SetCircularOrbit(System.String,System.Double)">
+             <summary>
+             Set the orbit of the active vessel to a circular orbit.
+             </summary>
+             <param name="body">Body to orbit.</param>
+             <param name="altitude">Altitude to orbit at, in meters above MSL.</param>
+            </member>
+        <member name="M:TestingTools.TestingTools.SetOrbit(System.String,System.Double,System.Double,System.Double,System.Double,System.Double,System.Double,System.Double)">
+             <summary>
+             Set the orbit of the active vessel.
+             </summary>
+            </member>
+        <member name="M:TestingTools.TestingTools.ClearRotation(KRPC.SpaceCenter.Services.Vessel)">
+             <summary>
+             Clear the rotational velocity of the given vessel.
+             </summary>
+             <param name="vessel">Vessel.</param>
+            </member>
+        <member name="M:TestingTools.TestingTools.ApplyRotation(System.Single,KRPC.Utils.Tuple{System.Single,System.Single,System.Single},KRPC.SpaceCenter.Services.Vessel)">
+             <summary>
+             Apply a rotation to the given vessel.
+             </summary>
+            </member>
+    </members>
+</doc>
