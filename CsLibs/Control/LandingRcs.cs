@@ -22,7 +22,7 @@ namespace KrpcAutoPilot
             double rcs_force_limit = RcsMaxHorizonForce(rcs_layout);
 
             Vector3d v_err = tar_pos - Trajectory.ImpactPositionWithAction;
-            Vector3d tar_acc = v_err / 10d;
+            Vector3d tar_acc = v_err / 2d;
             landing_rcs_tar_acc_i += tar_acc * 0.03d;
             double int_upper_bound = Math.Min(
                 Math.Abs(tar_altitude - State.Vessel.Altitude) / 1000d,

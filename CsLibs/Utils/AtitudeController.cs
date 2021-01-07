@@ -63,10 +63,10 @@ namespace KrpcAutoPilot.Utils
 
             tar_acc_v += (tar_vel_v - cur_vel) * Kp;
             pitch = tar_acc_v * MaxPitchAngAcc.Norm() / MaxPitchAngAcc.Length();
-            int_pitch_ = Math.Clamp(int_pitch_ + pitch * Ki, -0.1d, 0.1d);
+            int_pitch_ = Math.Clamp(int_pitch_ + pitch * Ki, -1d, 1d);
             pitch = Math.Clamp(pitch + int_pitch_, -1d, 1d);
             yaw = tar_acc_v * MaxYawAngAcc.Norm() / MaxYawAngAcc.Length();
-            int_yaw_ = Math.Clamp(int_yaw_ + yaw * Ki, -0.1d, 0.1d);
+            int_yaw_ = Math.Clamp(int_yaw_ + yaw * Ki, -1d, 1d);
             yaw = Math.Clamp(yaw + int_yaw_, -1d, 1d);
             return true;
         }

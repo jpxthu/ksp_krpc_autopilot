@@ -54,6 +54,7 @@ namespace KrpcAutoPilot
             /// the axis of rotation, using the right-hand rule.
             /// </summary>
             public Vector3d AngularVelocity { get; set; }
+            public Vector3d AvailablePosTorque { get; set; }
             /// <summary>
             /// The maximum force that the currently active RCS thrusters can generate. Returns
             /// the forces in N along each of the coordinate axes of the vessels reference frame

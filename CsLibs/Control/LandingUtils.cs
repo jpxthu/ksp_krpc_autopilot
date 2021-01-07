@@ -78,9 +78,10 @@ namespace KrpcAutoPilot
         {
             //Vector3d dir = State.Vessel.VelocityHorizon;
             //dir = dir.Norm() * Math.Min(2d, dir.Length());
-            Vector3d dir = VectorHorizonPart(tar_pos - State.Vessel.Position).Norm();
-            double ratio = Math.Clamp(Math.Sqrt(Math.Max(0d, State.Vessel.Altitude - tar_altitude - 2000d)), 0d, 100d);
-            return tar_pos + dir * ratio;
+            Vector3d dir = VectorHorizonPart(tar_pos - State.Vessel.Position);
+            double ratio = 0d;// Math.Clamp(Math.Sqrt(Math.Max(0d, State.Vessel.Altitude - tar_altitude - 2000d)), 0d, 200d);
+            //ratio = Math.Min(ratio, dir.Length());
+            return tar_pos + dir.Norm() * ratio;
         }
     }
 }

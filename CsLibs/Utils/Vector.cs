@@ -244,5 +244,13 @@ namespace KrpcAutoPilot.Utils
             Item1.SelectMin(v);
             Item2.SelectMin(v);
         }
+        public override string ToString()
+        {
+            return string.Format("{0}\t{1}", Item1.ToString(), Item2.ToString());
+        }
+        public string ToString(string format)
+        {
+            return string.Format("{0}\t{1}", Item1.ToString(format), Item2.ToString(format));
+        }
     }
 }

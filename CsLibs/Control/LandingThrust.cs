@@ -16,7 +16,7 @@ namespace KrpcAutoPilot
             double max_thrust_up = /*vessel_up_ratio */ data.available_thrust;
             double max_acc_up = Math.Max(0.01d, max_thrust_up / data.mass * LANDING_MAX_THROTTLE - data.g);
             LinearPlanner.OneWay(data.altitude - data.tar_altitude,
-                0.3d, max_acc_up, MIN_LANDING_VELOCITY,
+                0.2d, max_acc_up, MIN_LANDING_VELOCITY,
                 out double tar_vel, out double tar_acc);
             tar_acc += (tar_vel - data.vel * up) * 2d;
             double tar_throttle = Math.Clamp((tar_acc + data.g) * data.mass / max_thrust_up, 0d, 1d);
@@ -47,7 +47,7 @@ namespace KrpcAutoPilot
             double max_thrust_up = /*vessel_up_ratio */ State.Vessel.AvailableThrust;
             double max_acc_up = Math.Max(0.01d, max_thrust_up / State.Vessel.Mass * LANDING_MAX_THROTTLE - State.Vessel.Gravity);
             LinearPlanner.OneWay(State.Vessel.Altitude - tar_altitude,
-                0.3d, max_acc_up, MIN_LANDING_VELOCITY,
+                0.2d, max_acc_up, MIN_LANDING_VELOCITY,
                 out double tar_vel, out double tar_acc);
             tar_acc += (tar_vel - State.Vessel.VelocityUp) * 2d;
             double tar_throttle = Math.Clamp((tar_acc + State.Vessel.Gravity) * State.Vessel.Mass / max_thrust_up, 0d, 1d);

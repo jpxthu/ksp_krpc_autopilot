@@ -112,7 +112,7 @@ namespace KrpcAutoPilot
             //    RcsAltitudeControl = false;
             tar_pos = TargetPositionCompensate2(tar_pos, tar_altitude);
 
-            //Conn.Drawing().Clear();
+            Conn.Drawing().Clear();
             if (State.Vessel.Altitude - tar_altitude < 10000d && -State.Vessel.VelocityUp < 20d)
             {
                 LandingDirection(tar_pos, tar_altitude);

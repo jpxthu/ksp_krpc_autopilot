@@ -41,6 +41,7 @@ namespace KrpcAutoPilot
                 // Vessel
                 Altitude = conn.AddStream(() => flight.MeanAltitude);
                 AngularVelocity = conn.AddStream(() => active_vessel.AngularVelocity(body.ReferenceFrame));
+                AvailablePosTorque = conn.AddStream(() => active_vessel.AvailablePosTorque);
                 AvailableRCSForce = conn.AddStream(() => active_vessel.AvailableRCSForce);
                 AvailableThrust = conn.AddStream(() => active_vessel.AvailableThrust);
                 AvailableTorque = conn.AddStream(() => active_vessel.AvailableTorque);
@@ -76,6 +77,7 @@ namespace KrpcAutoPilot
                 // Vessel
                 Altitude.Remove();
                 AngularVelocity.Remove();
+                AvailablePosTorque.Remove();
                 AvailableRCSForce.Remove();
                 AvailableThrust.Remove();
                 AvailableTorque.Remove();
@@ -105,6 +107,7 @@ namespace KrpcAutoPilot
             // Vessel
             public Stream<double> Altitude { get; private set; }
             public Stream<Tuple<double, double, double>> AngularVelocity { get; private set; }
+            public Stream<Tuple<Tuple<double, double, double>, Tuple<double, double, double>>> AvailablePosTorque { get; private set; }
             public Stream<Tuple<Tuple<double, double, double>, Tuple<double, double, double>>> AvailableRCSForce { get; private set; }
             public Stream<float> AvailableThrust { get; private set; }
             public Stream<Tuple<Tuple<double, double, double>, Tuple<double, double, double>>> AvailableTorque { get; private set; }
@@ -138,6 +141,7 @@ namespace KrpcAutoPilot
                 // Vessel
                 Vessel.Altitude = streams_.Altitude.Get();
                 Vessel.AngularVelocity = new Vector3d(streams_.AngularVelocity.Get());
+                Vessel.AvailablePosTorque = new Vector3d(streams_.AvailablePosTorque.Get().Item1);
                 Vessel.AvailableRCSForce = new TupleV3d(streams_.AvailableRCSForce.Get());
                 Vessel.AvailableThrust = streams_.AvailableThrust.Get();
                 Vessel.AvailableTorque = new TupleV3d(streams_.AvailableTorque.Get());

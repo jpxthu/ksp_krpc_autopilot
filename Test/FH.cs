@@ -56,6 +56,9 @@ class FH
     private bool Launch(out Thread launch_thread)
     {
         engine_main.ThrustLimit = 0.6f;
+        engine_main.GimbalLimit = 0.1f;
+        engine_north.GimbalLimit = 0.3f;
+        engine_south.GimbalLimit = 0.3f;
         launch_thread = new Thread(() => VesselControl.Launch("LOAD", common_data, conn, sc, vessel, 80000));
         launch_thread.Start();
         return true;
@@ -104,6 +107,9 @@ class FH
             engine_main.ThrustLimit = 1f;
             engine_north.ThrustLimit = 0f;
             engine_south.ThrustLimit = 0f;
+            engine_main.GimbalLimit = 1f;
+            engine_north.GimbalLimit = 1f;
+            engine_south.GimbalLimit = 1f;
             Thread.Sleep(1000);
             vessel.Control.ActivateNextStage();
 
