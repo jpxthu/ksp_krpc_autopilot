@@ -21,6 +21,10 @@ namespace KrpcAutoPilot
             ABANDON
         }
 
+        private const double LAUNCH_ASCENT_ANGLE_OF_ATTACK_MAX = 5d / 180d * Math.PI;
+        private const double LAUNCH_ASCENT_TURN_TIME = 20d;
+        private const double LAUNCH_ASCENT_GRAVITY_TURN_VELOCITY = 100d;
+
         private const double LANDING_MAX_THROTTLE = 1d;
         private const double LANDING_ADJUST2_MIN_TILT_RAD = 20d / 180d * Math.PI;
         private const double LANDING_MIN_VELOCITY = 5d;

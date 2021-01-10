@@ -35,10 +35,10 @@ namespace KrpcAutoPilot
                 Vector3d tar = State.Vessel.Position - tar_pos;
                 Vector3d tar_pos_v_hori_without_comp = VectorHorizonPart(tar_pos - Trajectory.ImpactPositionWithAction);
                 double distance_without_comp = tar_pos_v_hori_without_comp.Length();
-                if ((tar.Norm() * State.Vessel.SurfUp > Math.Cos(20d / 180d * Math.PI) ||
-                     s < v * v / 2d / a + v * LANDING_ADJUST2_TURN_TIME * 2d ||
-                     a * (Trajectory.NextBurnTime - LANDING_ADJUST2_TURN_TIME * 2d) * 5d < v) &&
-                    ((distance_without_comp > 200d && landing_adjust_throttle >= 0d) ||
+                if (distance_without_comp > 200d && landing_adjust_throttle >= 0d ||
+                    ((tar.Norm() * State.Vessel.SurfUp > Math.Cos(20d / 180d * Math.PI) ||
+                      s < v * v / 2d / a + v * LANDING_ADJUST2_TURN_TIME * 2d ||
+                      a * (Trajectory.NextBurnTime - LANDING_ADJUST2_TURN_TIME * 2d) * 5d < v) &&
                      distance_without_comp > 200d + 100d * Trajectory.NextBurnTime))
                 {
                     tar_pos_v_hori = tar_pos_v_hori_without_comp;
@@ -102,32 +102,32 @@ namespace KrpcAutoPilot
             double dir_error = State.Vessel.Direction * tar_dir;
             landing_adjust_throttle = throttle < 0d ? -1d : Math.Max(0d, throttle * (dir_error - 0.95d) * 20d);
 
-            if (ActiveVessel == SpaceCenter.ActiveVessel)
-            {
-                Conn.Drawing().Clear();
-                Conn.Drawing().AddDirection(
-                    SpaceCenter.TransformDirection(tar_dir.ToTuple(), OrbitBody.ReferenceFrame, ActiveVessel.ReferenceFrame),
-                    ActiveVessel.ReferenceFrame,
-                    30f);
-                Conn.Drawing().AddDirection(
-                    SpaceCenter.TransformDirection(tar_pos_v_hori.Norm().ToTuple(), OrbitBody.ReferenceFrame, ActiveVessel.ReferenceFrame),
-                    ActiveVessel.ReferenceFrame,
-                    50f);
-                Conn.Drawing().AddLine(
-                    State.Vessel.Position.ToTuple(),
-                    Trajectory.ImpactPositionWithAction.ToTuple(),
-                    OrbitBody.ReferenceFrame);
-                Conn.Drawing().AddLine(
-                    State.Vessel.Position.ToTuple(),
-                    tar_pos.ToTuple(),
-                    OrbitBody.ReferenceFrame);
-                Console.WriteLine("{0:0.0}\t{1:0}\t{2:00}\t{3:0.00}\t{4:0.00}",
-                    Trajectory.NextBurnTime,
-                    throttle,
-                    landing_lift_angle / Math.PI * 180d,
-                    distance,
-                    turn_angle / Math.PI * 180d);
-            }
+            //if (ActiveVessel == SpaceCenter.ActiveVessel)
+            //{
+            //    Conn.Drawing().Clear();
+            //    Conn.Drawing().AddDirection(
+            //        SpaceCenter.TransformDirection(tar_dir.ToTuple(), OrbitBody.ReferenceFrame, ActiveVessel.ReferenceFrame),
+            //        ActiveVessel.ReferenceFrame,
+            //        30f);
+            //    Conn.Drawing().AddDirection(
+            //        SpaceCenter.TransformDirection(tar_pos_v_hori.Norm().ToTuple(), OrbitBody.ReferenceFrame, ActiveVessel.ReferenceFrame),
+            //        ActiveVessel.ReferenceFrame,
+            //        50f);
+            //    Conn.Drawing().AddLine(
+            //        State.Vessel.Position.ToTuple(),
+            //        Trajectory.ImpactPositionWithAction.ToTuple(),
+            //        OrbitBody.ReferenceFrame);
+            //    Conn.Drawing().AddLine(
+            //        State.Vessel.Position.ToTuple(),
+            //        tar_pos.ToTuple(),
+            //        OrbitBody.ReferenceFrame);
+            //    Console.WriteLine("{0:0.0}\t{1:0}\t{2:00}\t{3:0.00}\t{4:0.00}",
+            //        Trajectory.NextBurnTime,
+            //        throttle,
+            //        landing_lift_angle / Math.PI * 180d,
+            //        distance,
+            //        turn_angle / Math.PI * 180d);
+            //}
 
             return false;
         }
