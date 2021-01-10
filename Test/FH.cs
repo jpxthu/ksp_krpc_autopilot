@@ -144,7 +144,7 @@ class FH
         LandingAdjustBurnStatus landingAdjustBurnStatusSouth = LandingAdjustBurnStatus.UNAVAILABEL;
         bool landingAdjustBurn = false;
 
-        double tar_altitude = 215d;
+        double tar_altitude = 205d;
         recycle_north_thread = new Thread(() => VesselControl.Recycle(
             "NORTH", common_data, conn, sc, vessel_north, KrpcAutoPilot.Control.RcsLayout.TOP,
             new Vector3d(body.PositionAtAltitude(

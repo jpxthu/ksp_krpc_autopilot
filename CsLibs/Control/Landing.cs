@@ -112,7 +112,6 @@ namespace KrpcAutoPilot
             //    RcsAltitudeControl = false;
             tar_pos = TargetPositionCompensate2(tar_pos, tar_altitude);
 
-            Conn.Drawing().Clear();
             if (State.Vessel.Altitude - tar_altitude < 10000d && -State.Vessel.VelocityUp < 20d)
             {
                 LandingDirection(tar_pos, tar_altitude);
@@ -120,7 +119,7 @@ namespace KrpcAutoPilot
                 LandingRcsLast(tar_pos, rcs_layout);
                 if (!gear_deployed && Trajectory.ImpactTime <= gear_deploy_time)
                     gear_deployed = ActiveVessel.Control.Gear = true;
-                if (-State.Vessel.VelocityUp < MIN_LANDING_VELOCITY / 2d)
+                if (-State.Vessel.VelocityUp < LANDING_MIN_VELOCITY / 2d)
                     return true;
             }
             else

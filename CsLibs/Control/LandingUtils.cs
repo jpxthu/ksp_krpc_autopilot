@@ -38,7 +38,7 @@ namespace KrpcAutoPilot
             return engine_gimbal_thrust_limit;
         }
 
-        private double RcsMaxHorizonForce(RcsLayout rcs_layout)
+        private double RcsMaxHorizonForce(RcsLayout rcs_layout = RcsLayout.SYMMETRICAL)
         {
             double rcs_force_limit = Math.Min(
                 Math.Min(State.Vessel.AvailableRCSForce.Item1.X, State.Vessel.AvailableRCSForce.Item1.Z),

@@ -14,13 +14,13 @@ namespace KrpcAutoPilot
         private double altitude_controller_roll_ki_;
 
         private void AltitudeControllerInit(
-            double linear_k = 0.8d,
+            double linear_k = 1.5d,
             double max_act = 0.6d,
             double kp = 1.5d,
             double ki = 0.1d)
         {
             atitude_controller_ = new AtitudeController(linear_k, max_act, kp, ki);
-            altitude_controller_roll_linear_k_ = linear_k;
+            altitude_controller_roll_linear_k_ = 0.8d;
             altitude_controller_roll_max_act_ = max_act;
             altitude_controller_roll_kp_ = kp * 2d;
             altitude_controller_roll_int_ = 0d;

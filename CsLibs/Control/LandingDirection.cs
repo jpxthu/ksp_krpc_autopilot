@@ -25,7 +25,7 @@ namespace KrpcAutoPilot
             double adjust_tilt = Math.Min(Math.PI / 2d, Math.Max(vel_tilt, grav_tilt));
             double adjust_throttle = 1d;
 
-            if (Trajectory.NextBurnTime > 5d || (landing_adjust_throttle > 0.1d && Trajectory.NextBurnTime > 1d))
+            if (Trajectory.NextBurnTime > LANDING_ADJUST2_TURN_TIME)
             {
                 double v = State.Vessel.VelocityHorizonMag;
                 double a = State.Vessel.AvailableThrust * adjust_throttle / State.Vessel.Mass * Math.Sin(adjust_tilt);
@@ -33,13 +33,15 @@ namespace KrpcAutoPilot
                 double r = State.Vessel.Position.Length();
                 s *= (r + State.Vessel.VelocityUp * v / a) / r;
                 Vector3d tar = State.Vessel.Position - tar_pos;
-                double distance_without_comp = (tar_pos - Trajectory.ImpactPositionWithAction).Length();
+                Vector3d tar_pos_v_hori_without_comp = VectorHorizonPart(tar_pos - Trajectory.ImpactPositionWithAction);
+                double distance_without_comp = tar_pos_v_hori_without_comp.Length();
                 if ((tar.Norm() * State.Vessel.SurfUp > Math.Cos(20d / 180d * Math.PI) ||
-                     s < v * v / 2d / a + v * 10d ||
-                     a * (Trajectory.NextBurnTime - 10d) * 5d < v) &&
+                     s < v * v / 2d / a + v * LANDING_ADJUST2_TURN_TIME * 2d ||
+                     a * (Trajectory.NextBurnTime - LANDING_ADJUST2_TURN_TIME * 2d) * 5d < v) &&
                     ((distance_without_comp > 200d && landing_adjust_throttle >= 0d) ||
                      distance_without_comp > 200d + 100d * Trajectory.NextBurnTime))
                 {
+                    tar_pos_v_hori = tar_pos_v_hori_without_comp;
                     distance = distance_without_comp;
                     landing_lift_angle = -adjust_tilt;
                     throttle = adjust_throttle;
@@ -55,37 +57,13 @@ namespace KrpcAutoPilot
                     return false;
                 }
             }
-            else if (Trajectory.NextBurnTime < 0.5d)
-            {
-                double f = Trajectory.LiftEstimationThrustAve * Math.Sin(Trajectory.LiftEstimationAngle);
-                double diff = f - Trajectory.LiftEstimationForceAve;
-                if (landing_lift_angle < 0d)
-                {
-                    if (diff < State.Vessel.Mass)
-                        landing_lift_angle = 0d;
-                    else
-                        landing_lift_angle = -Trajectory.LiftEstimationAngle;
-                }
-                else if (landing_lift_angle > 0d)
-                {
-                    if (diff > -State.Vessel.Mass)
-                        landing_lift_angle = 0d;
-                    else
-                        landing_lift_angle = Trajectory.LiftEstimationAngle;
-                }
-                else
-                {
-                    if (diff > State.Vessel.Mass * 1.5d)
-                        landing_lift_angle = -Trajectory.LiftEstimationAngle;
-                    else if (diff < -State.Vessel.Mass * 1.5d)
-                        landing_lift_angle = Trajectory.LiftEstimationAngle;
-                    else
-                        landing_lift_angle = 0d;
-                }
-            }
             else
             {
-                landing_lift_angle = 0d;
+                double thrust_f = Trajectory.LiftEstimationThrustAve * Math.Sin(Trajectory.LiftEstimationAngle);
+                double rcs_f = RcsMaxHorizonForce();
+                double diff = thrust_f + rcs_f - Trajectory.LiftEstimationForceAve;
+
+                landing_lift_angle = -Trajectory.LiftEstimationAngle * Math.Clamp(diff / State.Vessel.Mass, -1d, 1d);
             }
 
             Vector3d tar_dir;
@@ -99,51 +77,68 @@ namespace KrpcAutoPilot
                 Vector3d turn_v = turn_angle * turn_v1;
                 Matrix3d r = turn_v.RotationMatrix();
                 tar_dir = r * (-State.Vessel.Velocity).Norm();
+
+                if (tar_dir * State.Vessel.SurfUp < 0d)
+                {
+                    tar_dir = VectorHorizonPart(tar_dir).Norm();
+                    if (State.Vessel.Direction * tar_dir < -0.5d)
+                        tar_dir = State.Vessel.SurfUp;
+                }
             }
             else
             {
-                Vector3d hori_dir = State.Vessel.VelocityHorizonMag < distance ?
-                    tar_pos_v_hori : -State.Vessel.VelocityHorizon;
+                Vector3d hori_dir = tar_pos_v_hori;
                 tar_dir = hori_dir.Norm() * Math.Sin(adjust_tilt) + State.Vessel.SurfUp * Math.Cos(adjust_tilt);
             }
 
             double up_dir_ratio = MathLib.InverseLerpWithClamp(50d, 0d, State.Vessel.VelocityMag);
             tar_dir = tar_dir * (1d - up_dir_ratio) + State.Vessel.SurfUp * up_dir_ratio;
+
+            if (tar_dir * State.Vessel.SurfUp < 0d)
+                tar_dir = VectorHorizonPart(tar_dir);
+
             tar_dir = tar_dir.Norm();
             Command.SetTargetDirection(tar_dir);
             double dir_error = State.Vessel.Direction * tar_dir;
             landing_adjust_throttle = throttle < 0d ? -1d : Math.Max(0d, throttle * (dir_error - 0.95d) * 20d);
 
-            Conn.Drawing().AddDirection(
-                SpaceCenter.TransformDirection(State.Vessel.Direction.ToTuple(), OrbitBody.ReferenceFrame, ActiveVessel.ReferenceFrame),
-                ActiveVessel.ReferenceFrame, 40f);
-            Conn.Drawing().AddDirection(
-                SpaceCenter.TransformDirection(tar_dir.ToTuple(), OrbitBody.ReferenceFrame, ActiveVessel.ReferenceFrame),
-                ActiveVessel.ReferenceFrame,
-                30f);
-            Conn.Drawing().AddLine(
-                State.Vessel.Position.ToTuple(),
-                Trajectory.ImpactPositionWithAction.ToTuple(),
-                OrbitBody.ReferenceFrame);
-            Conn.Drawing().AddLine(
-                State.Vessel.Position.ToTuple(),
-                tar_pos.ToTuple(),
-                OrbitBody.ReferenceFrame);
-            Console.WriteLine("{0:0.0}\t{1:0}\t{2:0}\t{3:0.00}\t{4:0.00}\t{5:0.000}",
-                Trajectory.NextBurnTime,
-                Trajectory.LiftEstimationThrustAve,
-                Trajectory.LiftEstimationForceAve,
-                landing_lift_angle / Math.PI * 180d,
-                distance,
-                turn_angle);
+            if (ActiveVessel == SpaceCenter.ActiveVessel)
+            {
+                Conn.Drawing().Clear();
+                Conn.Drawing().AddDirection(
+                    SpaceCenter.TransformDirection(tar_dir.ToTuple(), OrbitBody.ReferenceFrame, ActiveVessel.ReferenceFrame),
+                    ActiveVessel.ReferenceFrame,
+                    30f);
+                Conn.Drawing().AddDirection(
+                    SpaceCenter.TransformDirection(tar_pos_v_hori.Norm().ToTuple(), OrbitBody.ReferenceFrame, ActiveVessel.ReferenceFrame),
+                    ActiveVessel.ReferenceFrame,
+                    50f);
+                Conn.Drawing().AddLine(
+                    State.Vessel.Position.ToTuple(),
+                    Trajectory.ImpactPositionWithAction.ToTuple(),
+                    OrbitBody.ReferenceFrame);
+                Conn.Drawing().AddLine(
+                    State.Vessel.Position.ToTuple(),
+                    tar_pos.ToTuple(),
+                    OrbitBody.ReferenceFrame);
+                Console.WriteLine("{0:0.0}\t{1:0}\t{2:00}\t{3:0.00}\t{4:0.00}",
+                    Trajectory.NextBurnTime,
+                    throttle,
+                    landing_lift_angle / Math.PI * 180d,
+                    distance,
+                    turn_angle / Math.PI * 180d);
+            }
 
             return false;
         }
 
         public bool LandingDirectionLast()
         {
+            Vector3d tar_dir = State.Vessel.Velocity * Math.Clamp(State.Vessel.VelocityMag / 100d, 0d, 1d);
+            tar_dir = (State.Vessel.SurfUp - tar_dir).Norm();
             //Command.SetTargetDirection(-State.Vessel.Velocity);
-            Command.SetTargetDirection(State.Vessel.SurfUp);
+            //Command.SetTargetDirection(State.Vessel.SurfUp);
+            Command.SetTargetDirection(tar_dir);
             return false;
         }
     }
