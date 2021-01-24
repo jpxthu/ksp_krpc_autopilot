@@ -1,3 +1,9 @@
 [submodule "external/osqp"]
 	path = external/osqp
 	url = https://github.com/oxfordcontrol/osqp.git
+[submodule "external/osqp-cpp"]
+	path = external/osqp-cpp
+	url = https://github.com/google/osqp-cpp.git
+[submodule "external/eigen"]
+	path = external/eigen
+	url = https://gitlab.com/libeigen/eigen.git
