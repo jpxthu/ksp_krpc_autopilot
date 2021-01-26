@@ -24,7 +24,7 @@ namespace KrpcAutoPilot
             }
         }
 
-        public bool Execute()
+        public Status Execute()
         {
             try
             {
@@ -38,7 +38,7 @@ namespace KrpcAutoPilot
                 Console.WriteLine(
                     "Error when executing. Vessel <{0}> may out of distance or crashed. Error message: {1}",
                     VesselName, e.Message);
-                return false;
+                return Status.FAIL;
             }
 
             return AtitudeControl();
@@ -59,6 +59,7 @@ namespace KrpcAutoPilot
             Conn = conn;
             ActiveVessel = vessel;
             OrbitBody = vessel.Orbit.Body;
+            OrbitBodyFrame = OrbitBody.ReferenceFrame;
             SpaceCenter = conn.SpaceCenter();
 
             CommonData = common_data;
@@ -91,10 +92,11 @@ namespace KrpcAutoPilot
         private Vessel ActiveVessel { get; }
         private Connection Conn { get; }
         private CelestialBody OrbitBody { get; }
+        private ReferenceFrame OrbitBodyFrame { get; }
         private Service SpaceCenter { get; }
 
         private CommonData CommonData { get; }
-        private VesselData State { get; }
+        public VesselData State { get; }
 
         public Command Command { get; }
         public Trajectory Trajectory { get; }

@@ -16,7 +16,7 @@ namespace KrpcAutoPilot
         private void AltitudeControllerInit(
             double linear_k = 1.5d,
             double max_act = 0.6d,
-            double kp = 1.5d,
+            double kp = 3d,
             double ki = 0.1d)
         {
             atitude_controller_ = new AtitudeController(linear_k, max_act, kp, ki);
@@ -27,7 +27,7 @@ namespace KrpcAutoPilot
             altitude_controller_roll_ki_ = ki * 2d;
         }
 
-        private bool AtitudeControlSetRPY(double roll, double pitch, double yaw)
+        private Status AtitudeControlSetRPY(double roll, double pitch, double yaw)
         {
             Command.Roll = roll;
             Command.Pitch = pitch;
@@ -43,12 +43,12 @@ namespace KrpcAutoPilot
                 Console.WriteLine(
                     "Error when controlling attitude. Vessel <{0}> may out of distance or crashed. " +
                     "Error message: {1}", VesselName, e.Message);
-                return false;
+                return Status.FAIL;
             }
-            return true;
+            return Status.SUCCESS;
         }
 
-        private bool AtitudeControl()
+        private Status AtitudeControl()
         {
             if (Command.DirectionVector is null)
                 return AtitudeControlSetRPY(0d, 0d, 0d);

@@ -8,14 +8,17 @@ namespace KrpcAutoPilot
     {
         //private StreamWriter sw;
 
-        public bool LandingInit(double tar_altitude)
+        public bool LandingInit(
+            double tar_altitude,
+            double landing_min_velocity = 5d)
         {
             //sw = new StreamWriter("r.tsv");
 
-            gear_deployed = false;
-            landing_adjust_throttle = -1d;
-            landing_lift_angle = 0d;
-            landing_rcs_tar_acc_i = Vector3d.Zero;
+            gear_deployed_ = false;
+            landing_adjust_throttle_ = -1d;
+            landing_lift_angle_ = 0d;
+            landing_min_velocity_ = landing_min_velocity;
+            landing_rcs_tar_acc_i_ = Vector3d.Zero;
             RcsAltitudeControl = true;
 
             Trajectory.CalculateStart(tar_altitude: tar_altitude);
@@ -114,19 +117,17 @@ namespace KrpcAutoPilot
 
             if (State.Vessel.Altitude - tar_altitude < 10000d && -State.Vessel.VelocityUp < 20d)
             {
-                LandingDirection(tar_pos, tar_altitude);
-                //LandingDirectionLast();
                 LandingRcsLast(tar_pos, rcs_layout);
-                if (!gear_deployed && Trajectory.ImpactTime <= gear_deploy_time)
-                    gear_deployed = ActiveVessel.Control.Gear = true;
-                if (-State.Vessel.VelocityUp < LANDING_MIN_VELOCITY / 2d)
+                if (!gear_deployed_ && Trajectory.ImpactTime <= gear_deploy_time)
+                    gear_deployed_ = ActiveVessel.Control.Gear = true;
+                if (-State.Vessel.VelocityUp < landing_min_velocity_ / 2d)
                     return true;
             }
             else
             {
-                LandingDirection(tar_pos, tar_altitude);
                 LandingRcs(tar_pos, tar_altitude, rcs_layout);
             }
+            LandingDirection(tar_pos, tar_altitude, rcs_layout);
             LandingThrust(tar_altitude);
             if (heading.HasValue)
                 Command.SetHeadingAngle(heading.Value);

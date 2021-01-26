@@ -6,7 +6,7 @@ namespace KrpcAutoPilot
 {
     public partial class Control
     {
-        public bool LandingDirection(Vector3d tar_pos, double tar_altitude)
+        public bool LandingDirection(Vector3d tar_pos, double tar_altitude, RcsLayout rcs_layout)
         {
             if (!Trajectory.ResultStable)
             {
@@ -21,7 +21,7 @@ namespace KrpcAutoPilot
 
             double up_ratio = Math.Max(State.Vessel.SurfUp * State.Vessel.Direction, 0.01d);
             double vel_tilt = Math.Acos(up_ratio);
-            double grav_tilt = Math.Acos(State.Vessel.Gravity * 0.8d * State.Vessel.Mass / State.Vessel.AvailableThrust);
+            double grav_tilt = Math.Acos(State.Vessel.GravityMag * 0.8d * State.Vessel.Mass / State.Vessel.AvailableThrust);
             double adjust_tilt = Math.Min(Math.PI / 2d, Math.Max(vel_tilt, grav_tilt));
             double adjust_throttle = 1d;
 
@@ -35,7 +35,7 @@ namespace KrpcAutoPilot
                 Vector3d tar = State.Vessel.Position - tar_pos;
                 Vector3d tar_pos_v_hori_without_comp = VectorHorizonPart(tar_pos - Trajectory.ImpactPositionWithAction);
                 double distance_without_comp = tar_pos_v_hori_without_comp.Length();
-                if (distance_without_comp > 200d && landing_adjust_throttle >= 0d ||
+                if (distance_without_comp > 200d && landing_adjust_throttle_ >= 0d ||
                     ((tar.Norm() * State.Vessel.SurfUp > Math.Cos(20d / 180d * Math.PI) ||
                       s < v * v / 2d / a + v * LANDING_ADJUST2_TURN_TIME * 2d ||
                       a * (Trajectory.NextBurnTime - LANDING_ADJUST2_TURN_TIME * 2d) * 5d < v) &&
@@ -43,17 +43,17 @@ namespace KrpcAutoPilot
                 {
                     tar_pos_v_hori = tar_pos_v_hori_without_comp;
                     distance = distance_without_comp;
-                    landing_lift_angle = -adjust_tilt;
+                    landing_lift_angle_ = -adjust_tilt;
                     throttle = adjust_throttle;
                 }
                 else if (Trajectory.LiftEstimationForceMin > 1d)
                 {
-                    landing_lift_angle = LANDING_ADJUST2_MIN_TILT_RAD;
+                    landing_lift_angle_ = LANDING_ADJUST2_MIN_TILT_RAD;
                 }
                 else
                 {
                     Command.SetTargetDirection(Trajectory.EnterAtmosphereDirection);
-                    landing_adjust_throttle = -1d;
+                    landing_adjust_throttle_ = -1d;
                     return false;
                 }
             }
@@ -63,20 +63,27 @@ namespace KrpcAutoPilot
                 double rcs_f = RcsMaxHorizonForce();
                 double diff = thrust_f + rcs_f - Trajectory.LiftEstimationForceAve;
 
-                landing_lift_angle = -Trajectory.LiftEstimationAngle * Math.Clamp(diff / State.Vessel.Mass, -1d, 1d);
+                landing_lift_angle_ = -Trajectory.LiftEstimationAngle * Math.Clamp(diff / State.Vessel.Mass, -1d, 1d);
             }
 
             Vector3d tar_dir;
             double turn_angle = 0d;
             if (throttle < 0d)
             {
-                double turn_angle_ratio = Math.Clamp(distance * 100d / Math.Clamp(State.Vessel.Altitude - tar_altitude, 1000d, 50000d), 0d, 1d);
-                double turn_angle_limit = Math.Clamp((State.Vessel.Altitude - tar_altitude - 100d) / 500d, 0d, 1d);
-                turn_angle = -landing_lift_angle * turn_angle_ratio * turn_angle_limit;
-                Vector3d turn_v1 = Vector3d.Cross(Trajectory.ImpactPositionWithAction.Norm(), tar_pos.Norm()).Norm();
-                Vector3d turn_v = turn_angle * turn_v1;
-                Matrix3d r = turn_v.RotationMatrix();
-                tar_dir = r * (-State.Vessel.Velocity).Norm();
+                if (rcs_layout == RcsLayout.SYMMETRICAL)
+                {
+                    tar_dir = -State.Vessel.Velocity.Norm();
+                }
+                else
+                {
+                    double turn_angle_ratio = Math.Clamp(distance * 100d / Math.Clamp(State.Vessel.Altitude - tar_altitude, 1000d, 50000d), 0d, 1d);
+                    double turn_angle_limit = Math.Clamp((State.Vessel.Altitude - tar_altitude - 100d) / 500d, 0d, 1d);
+                    turn_angle = -landing_lift_angle_ * turn_angle_ratio * turn_angle_limit;
+                    Vector3d turn_v1 = Vector3d.Cross(Trajectory.ImpactPositionWithAction.Norm(), tar_pos.Norm()).Norm();
+                    Vector3d turn_v = turn_angle * turn_v1;
+                    Matrix3d r = turn_v.RotationMatrix();
+                    tar_dir = r * (-State.Vessel.Velocity).Norm();
+                }
 
                 if (tar_dir * State.Vessel.SurfUp < 0d)
                 {
@@ -100,27 +107,27 @@ namespace KrpcAutoPilot
             tar_dir = tar_dir.Norm();
             Command.SetTargetDirection(tar_dir);
             double dir_error = State.Vessel.Direction * tar_dir;
-            landing_adjust_throttle = throttle < 0d ? -1d : Math.Max(0d, throttle * (dir_error - 0.95d) * 20d);
+            landing_adjust_throttle_ = throttle < 0d ? -1d : Math.Max(0d, throttle * (dir_error - 0.95d) * 20d);
 
             //if (ActiveVessel == SpaceCenter.ActiveVessel)
             //{
             //    Conn.Drawing().Clear();
             //    Conn.Drawing().AddDirection(
-            //        SpaceCenter.TransformDirection(tar_dir.ToTuple(), OrbitBody.ReferenceFrame, ActiveVessel.ReferenceFrame),
+            //        SpaceCenter.TransformDirection(tar_dir.ToTuple(), OrbitBodyFrame, ActiveVessel.ReferenceFrame),
             //        ActiveVessel.ReferenceFrame,
             //        30f);
             //    Conn.Drawing().AddDirection(
-            //        SpaceCenter.TransformDirection(tar_pos_v_hori.Norm().ToTuple(), OrbitBody.ReferenceFrame, ActiveVessel.ReferenceFrame),
+            //        SpaceCenter.TransformDirection(tar_pos_v_hori.Norm().ToTuple(), OrbitBodyFrame, ActiveVessel.ReferenceFrame),
             //        ActiveVessel.ReferenceFrame,
             //        50f);
             //    Conn.Drawing().AddLine(
             //        State.Vessel.Position.ToTuple(),
             //        Trajectory.ImpactPositionWithAction.ToTuple(),
-            //        OrbitBody.ReferenceFrame);
+            //        OrbitBodyFrame);
             //    Conn.Drawing().AddLine(
             //        State.Vessel.Position.ToTuple(),
             //        tar_pos.ToTuple(),
-            //        OrbitBody.ReferenceFrame);
+            //        OrbitBodyFrame);
             //    Console.WriteLine("{0:0.0}\t{1:0}\t{2:00}\t{3:0.00}\t{4:0.00}",
             //        Trajectory.NextBurnTime,
             //        throttle,

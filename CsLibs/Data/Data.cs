@@ -80,7 +80,8 @@ namespace KrpcAutoPilot
             /// </summary>
             public double DryMass { get; set; }
             public Vector3d Forward { get; set; }
-            public double Gravity { get; set; }
+            public Vector3d Gravity { get; set; }
+            public double GravityMag { get; set; }
             /// <summary>
             /// The total mass of the vessel, including resources, in kg.
             /// </summary>

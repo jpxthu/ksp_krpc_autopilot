@@ -1,9 +1,12 @@
 ﻿using KRPC.Client;
 using KRPC.Client.Services.SpaceCenter;
+using KRPC.Client.Services.UI;
 using KrpcAutoPilot;
 using KrpcAutoPilot.Utils;
+using System;
 using System.Net;
 using System.Threading;
+using Service = KRPC.Client.Services.SpaceCenter.Service;
 
 namespace Test
 {
@@ -46,6 +49,14 @@ namespace Test
 
             FH fh = new FH();
             fh.Start(FH.FocusPart.BOOSTER_NORTH);
+
+            //Docking docking = new Docking();
+            //docking.Start("Kerbin空间站", "docking_port_2", "docking_port", 50);
+
+            //Console.ReadKey();
+
+            //Recycle recycle = new Recycle();
+            //recycle.Start(80d, 2d);
         }
     }
 }

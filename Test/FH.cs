@@ -22,6 +22,9 @@ class FH
 
     private const float BOOSTER_SPLIT_FUEL = 2500;
     private const float FIRST_STAGE_SPLIT_FUEL = 3000;
+    private const double LANDING_MIN_VELOCITY = 5d;
+    private const double LANDING_BOOSTERS_ALTITUDE = 205d;
+    private const double LANDING_FIRST_STAGE_ALTITUDE = 30d;
 
     private Connection conn;
     private Service sc;
@@ -35,6 +38,7 @@ class FH
     private Part tank_north, tank_south, tank_main;
 
     private bool running;
+    private bool force_docking;
 
     private bool UpdateCommonData(out Thread common_data_thread)
     {
@@ -53,14 +57,24 @@ class FH
         return true;
     }
 
-    private bool Launch(out Thread launch_thread)
+    private bool LaunchAndDocking(out Thread launch_thread)
     {
         engine_main.ThrustLimit = 0.6f;
-        engine_main.GimbalLimit = 0.1f;
-        engine_north.GimbalLimit = 0.3f;
-        engine_south.GimbalLimit = 0.3f;
-        launch_thread = new Thread(() => VesselControl.Launch("LOAD", common_data, conn, sc, vessel, 80000));
+        //engine_main.GimbalLimit = 0.1f;
+        engine_north.GimbalLimit = 0.1f;
+        engine_south.GimbalLimit = 0.1f;
+        launch_thread = new Thread(() => VesselControl.LaunchAndDocking(
+                "LOAD", common_data, conn, sc, vessel, 80000,
+                "Kerbin空间站", "docking_port_2", "docking_port",
+                ref force_docking));
         launch_thread.Start();
+        new Thread(() =>
+        {
+            Thread.Sleep(2000);
+            vessel.Control.ActivateNextStage();
+            Thread.Sleep(2000);
+            vessel.Control.ActivateNextStage();
+        }).Start();
         return true;
     }
 
@@ -144,27 +158,38 @@ class FH
         LandingAdjustBurnStatus landingAdjustBurnStatusSouth = LandingAdjustBurnStatus.UNAVAILABEL;
         bool landingAdjustBurn = false;
 
-        double tar_altitude = 205d;
         recycle_north_thread = new Thread(() => VesselControl.Recycle(
-            "NORTH", common_data, conn, sc, vessel_north, KrpcAutoPilot.Control.RcsLayout.TOP,
-            new Vector3d(body.PositionAtAltitude(
+            vessel_name: "NORTH",
+            common_data: common_data,
+            connection: conn,
+            space_center: sc,
+            vessel: vessel_north,
+            rcs_layout: KrpcAutoPilot.Control.RcsLayout.TOP,
+            tar_pos: new Vector3d(body.PositionAtAltitude(
                 KrpcAutoPilot.Constants.Position.VAB_TOP_EAST.Lat,
                 KrpcAutoPilot.Constants.Position.VAB_TOP_EAST.Lng,
-                tar_altitude, body.ReferenceFrame)),
-            tar_altitude,
-            0d,
-            ref landingAdjustBurnStatusNorth,
-            ref landingAdjustBurn));
+                LANDING_BOOSTERS_ALTITUDE, body.ReferenceFrame)),
+            tar_altitude: LANDING_BOOSTERS_ALTITUDE,
+            landing_min_velocity: LANDING_MIN_VELOCITY,
+            heading: 0d,
+            landing_adjust_burn_status: ref landingAdjustBurnStatusNorth,
+            landing_adjust_could_burn: ref landingAdjustBurn));
         recycle_south_thread = new Thread(() => VesselControl.Recycle(
-            "SOUTH", common_data, conn, sc, vessel_south, KrpcAutoPilot.Control.RcsLayout.TOP,
-            new Vector3d(body.PositionAtAltitude(
+            vessel_name: "SOUTH",
+            common_data: common_data,
+            connection: conn,
+            space_center: sc,
+            vessel: vessel_south,
+            rcs_layout: KrpcAutoPilot.Control.RcsLayout.TOP,
+            tar_pos: new Vector3d(body.PositionAtAltitude(
                 KrpcAutoPilot.Constants.Position.VAB_TOP_WEST.Lat,
                 KrpcAutoPilot.Constants.Position.VAB_TOP_WEST.Lng,
-                tar_altitude, body.ReferenceFrame)),
-            tar_altitude,
-            Math.PI,
-            ref landingAdjustBurnStatusSouth,
-            ref landingAdjustBurn));
+                LANDING_BOOSTERS_ALTITUDE, body.ReferenceFrame)),
+            tar_altitude: LANDING_BOOSTERS_ALTITUDE,
+            landing_min_velocity: LANDING_MIN_VELOCITY,
+            heading: Math.PI,
+            landing_adjust_burn_status: ref landingAdjustBurnStatusSouth,
+            landing_adjust_could_burn: ref landingAdjustBurn));
         recycle_north_thread.Start();
         recycle_south_thread.Start();
 
@@ -198,6 +223,8 @@ class FH
             Thread.Sleep(1000);
             vessel.Control.ActivateNextStage();
 
+            force_docking = true;
+
             vessel_main = engine_main.Part.Vessel;
             if (focus_part == FocusPart.FIRST_STAGE)
                 sc.ActiveVessel = vessel_main;
@@ -206,7 +233,7 @@ class FH
             vessel_main.Control.Forward = -1f;
             vessel.Control.RCS = true;
             vessel.Control.Forward = 1f;
-            Thread.Sleep(1000);
+            Thread.Sleep(3000);
             vessel_main.Control.Forward = 0f;
             vessel.Control.Forward = 0f;
             engine_load.ThrustLimit = 1f;
@@ -227,12 +254,18 @@ class FH
             LandingAdjustBurnStatus landingAdjustBurnStatusMain = LandingAdjustBurnStatus.UNAVAILABEL;
             bool landingAdjustBurnMain = true;
             VesselControl.Recycle(
-                "MAIN", common_data, conn, sc, vessel_main, KrpcAutoPilot.Control.RcsLayout.TOP,
-                new Vector3d(sc.Vessels.Where(v => v.Name == "landing_ship").First().Position(body.ReferenceFrame)),
-                30d,
-                0d,
-                ref landingAdjustBurnStatusMain,
-                ref landingAdjustBurnMain);
+                vessel_name: "MAIN",
+                common_data: common_data,
+                connection: conn,
+                space_center: sc,
+                vessel: vessel_main,
+                rcs_layout: KrpcAutoPilot.Control.RcsLayout.TOP,
+                tar_pos: new Vector3d(sc.Vessels.Where(v => v.Name == "landing_ship").First().Position(body.ReferenceFrame)),
+                tar_altitude: LANDING_FIRST_STAGE_ALTITUDE,
+                landing_min_velocity: LANDING_MIN_VELOCITY,
+                heading: 0d,
+                landing_adjust_burn_status: ref landingAdjustBurnStatusMain,
+                landing_adjust_could_burn: ref landingAdjustBurnMain);
         });
         recycle_main_thread.Start();
         return true;
@@ -251,7 +284,7 @@ class FH
         tank_south = vessel.Parts.WithTag("tank_south").ToList().First();
         tank_main = vessel.Parts.WithTag("tank_main").ToList().First();
 
-        if (!Launch(out Thread launch_thread))
+        if (!LaunchAndDocking(out Thread launch_thread))
             return false;
         threads.Add(launch_thread);
 
@@ -272,6 +305,7 @@ class FH
     public void Start(FocusPart focus_part)
     {
         running = true;
+        force_docking = false;
 
         conn = new Connection(
             name: "My Example Program",

@@ -23,14 +23,14 @@ namespace KrpcAutoPilot
 
             Vector3d v_err = tar_pos - Trajectory.ImpactPositionWithAction;
             Vector3d tar_acc = v_err / 2d;
-            landing_rcs_tar_acc_i += tar_acc * 0.03d;
+            landing_rcs_tar_acc_i_ += tar_acc * 0.03d;
             double int_upper_bound = Math.Min(
                 Math.Abs(tar_altitude - State.Vessel.Altitude) / 1000d,
                 Math.Abs(State.Vessel.VelocityUp) / 100d);
             int_upper_bound = Math.Min(int_upper_bound, 5d);
-            if (landing_rcs_tar_acc_i.Length() > int_upper_bound)
-                landing_rcs_tar_acc_i *= int_upper_bound / landing_rcs_tar_acc_i.Length();
-            tar_acc += landing_rcs_tar_acc_i;
+            if (landing_rcs_tar_acc_i_.Length() > int_upper_bound)
+                landing_rcs_tar_acc_i_ *= int_upper_bound / landing_rcs_tar_acc_i_.Length();
+            tar_acc += landing_rcs_tar_acc_i_;
 
             RcsSetByForce(
                 Math.Clamp(tar_acc * State.Vessel.Right * State.Vessel.Mass, -rcs_force_limit, rcs_force_limit),

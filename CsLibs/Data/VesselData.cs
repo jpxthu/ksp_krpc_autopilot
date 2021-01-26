@@ -95,6 +95,12 @@ namespace KrpcAutoPilot
                 Velocity.Remove();
             }
 
+            public void Reset(Connection conn, Service sc, Vessel active_vessel)
+            {
+                Deinit();
+                Init(conn, sc, active_vessel);
+            }
+
             private readonly string vessel_name_;
 
             // Environment
@@ -167,8 +173,9 @@ namespace KrpcAutoPilot
                 Available = false;
                 return false;
             }
-            
-            Vessel.Gravity = common_data_.Body.GravitationalParameter / Vessel.Position.LengthSquared();
+
+            Vessel.Gravity = -common_data_.Body.GravitationalParameter / Math.Pow(Vessel.Position.Length(), 3) * Vessel.Position;
+            Vessel.GravityMag = Vessel.Gravity.Length();
             Vessel.MaxFuelRate = Vessel.MaxVacuumThrust / Vessel.VacuumSpecificImpulse / Constants.Common.GRAVITY_ON_KERBIN;
             Vessel.SurfUp = Vessel.Position.Norm();
             Vessel.SurfEast = Vector3d.Cross(Vessel.SurfUp, new Vector3d(0d, 1d, 0d)).Norm();
@@ -185,6 +192,10 @@ namespace KrpcAutoPilot
         public VesselData(string vessel_name, CommonData common_data, Connection conn, Service sc, Vessel vessel)
         {
             vessel_name_ = vessel_name;
+
+            connection_ = conn;
+            space_center_ = sc;
+            active_vessel_ = vessel;
 
             common_data_ = common_data;
             streams_ = new Streams(vessel_name, conn, sc, vessel);
@@ -204,7 +215,16 @@ namespace KrpcAutoPilot
             streams_.Dispose();
         }
 
+        public void Reset()
+        {
+            streams_.Reset(connection_, space_center_, active_vessel_);
+        }
+
         private readonly string vessel_name_;
+
+        private readonly Connection connection_;
+        private readonly Vessel active_vessel_;
+        private readonly Service space_center_;
 
         private readonly CommonData common_data_;
         private readonly Streams streams_;

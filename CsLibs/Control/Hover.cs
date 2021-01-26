@@ -23,13 +23,13 @@ namespace KrpcAutoPilot
             }
 
             double max_thrust_up = vessel_up_ratio * State.Vessel.AvailableThrust;
-            double max_acc_up = Math.Max(0.01d, max_thrust_up / State.Vessel.Mass * LANDING_MAX_THROTTLE - State.Vessel.Gravity);
-            double max_acc_down = State.Vessel.Gravity * LANDING_MAX_THROTTLE;
+            double max_acc_up = Math.Max(0.01d, max_thrust_up / State.Vessel.Mass * LANDING_MAX_THROTTLE - State.Vessel.GravityMag);
+            double max_acc_down = State.Vessel.GravityMag * LANDING_MAX_THROTTLE;
             LinearPlanner.Hover(State.Vessel.Altitude - tar_altitude,
                 0.3d, max_acc_up, max_acc_down,
                 out double tar_vel, out double tar_acc);
             tar_acc += (tar_vel - State.Vessel.VelocityUp) * 2d;
-            double tar_throttle = Math.Clamp((tar_acc + State.Vessel.Gravity) * State.Vessel.Mass / max_thrust_up, 0d, 1d);
+            double tar_throttle = Math.Clamp((tar_acc + State.Vessel.GravityMag) * State.Vessel.Mass / max_thrust_up, 0d, 1d);
             Command.SetThrottle(tar_throttle);
 
             return false;

@@ -9,6 +9,12 @@ namespace CsSamples
 {
     public class VesselControl
     {
+        private static void SwitchRcsEngines(Vessel vessel, bool enable)
+        {
+            foreach (var rcs in vessel.Parts.RCS)
+                rcs.Enabled = enable;
+        }
+
         public static void Launch(
             string vessel_name,
             CommonData common_data,
@@ -30,7 +36,7 @@ namespace CsSamples
                     break;
                 if (control.LaunchIntoApoapsis(apoapsis, 0d))
                     break;
-                if (!control.Execute())
+                if (control.Execute() == KrpcAutoPilot.Control.Status.FAIL)
                     break;
                 Thread.Sleep(100);
             }
@@ -43,7 +49,94 @@ namespace CsSamples
                     break;
                 if (control.LaunchIntoPeriapsis(apoapsis))
                     break;
-                if (!control.Execute())
+                if (control.Execute() == KrpcAutoPilot.Control.Status.FAIL)
+                    break;
+                Thread.Sleep(100);
+            }
+
+            control.DisEngage();
+            control.Dispose();
+        }
+
+        public static void LaunchAndDocking(
+            string vessel_name,
+            CommonData common_data,
+            Connection connection,
+            Service space_center,
+            Vessel vessel,
+            double apoapsis,
+            string target_vessel_name,
+            string target_port_tag,
+            string control_node_tag,
+            ref bool force_docking)
+        {
+            KrpcAutoPilot.Control control = new KrpcAutoPilot.Control(vessel_name, common_data, connection, space_center, vessel);
+            control.UpdateData();
+
+            control.Engage();
+
+            vessel.Control.RCS = false;
+
+            while (!force_docking)
+            {
+                if (!control.UpdateData())
+                    break;
+                if (control.LaunchIntoApoapsis(apoapsis, 0d))
+                    break;
+                if (control.Execute() == KrpcAutoPilot.Control.Status.FAIL)
+                    break;
+                Thread.Sleep(100);
+            }
+
+            vessel.Control.RCS = true;
+            control.LaunchIntoPeriapsisInit();
+
+            SwitchRcsEngines(vessel, true);
+            bool fairing_separated = false;
+            while (!force_docking)
+            {
+                if (!control.UpdateData())
+                    break;
+                if (control.LaunchIntoPeriapsis(apoapsis))
+                    break;
+                if (control.Execute() == KrpcAutoPilot.Control.Status.FAIL)
+                    break;
+                if (!fairing_separated &&
+                    (!common_data.Body.HasAtmosphere ||
+                     control.State.Vessel.Altitude > common_data.Body.AtmosphereDepth))
+                {
+                    fairing_separated = true;
+                    try
+                    {
+                        vessel.Control.ActivateNextStage();
+                    }
+                    catch (Exception)
+                    {
+                        break;
+                    }
+                }
+                Thread.Sleep(100);
+            }
+
+            control.ApproachInit(
+                ship_name: target_vessel_name,
+                dock_tag: target_port_tag,
+                control_node_tag: control_node_tag);
+
+            bool shroud_opened = false;
+            while (true)
+            {
+                if (!control.UpdateData())
+                    break;
+                double distance;
+                if (control.Approach(out distance) == KrpcAutoPilot.Control.Status.FINISHED)
+                    break;
+                if (!shroud_opened && distance < 20d)
+                {
+                    shroud_opened = true;
+                    vessel.Control.ToggleActionGroup(2);
+                }
+                if (control.Execute() == KrpcAutoPilot.Control.Status.FAIL)
                     break;
                 Thread.Sleep(100);
             }
@@ -71,7 +164,7 @@ namespace CsSamples
             Service space_center,
             Vessel vessel,
             KrpcAutoPilot.Control.RcsLayout rcs_layout,
-            Vector3d tar_pos, double tar_altitude, double heading,
+            Vector3d tar_pos, double tar_altitude, double landing_min_velocity, double heading,
             ref KrpcAutoPilot.Control.LandingAdjustBurnStatus landing_adjust_burn_status,
             ref bool landing_adjust_could_burn)
         {
@@ -81,6 +174,7 @@ namespace CsSamples
 
             control.Engage();
 
+            SwitchRcsEngines(vessel, true);
             vessel.Control.RCS = true;
 
             vessel.Control.Brakes = true;
@@ -90,7 +184,7 @@ namespace CsSamples
             SwitchEngineMode(vessel);
 
             Console.WriteLine("Landing init");
-            control.LandingInit(tar_altitude);
+            control.LandingInit(tar_altitude, landing_min_velocity);
 
             Console.WriteLine("Adjust landing position");
             while (true)
@@ -100,7 +194,7 @@ namespace CsSamples
                 landing_adjust_burn_status = control.AdjustLandingPosition(tar_pos, tar_altitude, landing_adjust_could_burn);
                 if (landing_adjust_burn_status == KrpcAutoPilot.Control.LandingAdjustBurnStatus.FINISHED)
                     break;
-                if (!control.Execute())
+                if (control.Execute() == KrpcAutoPilot.Control.Status.FAIL)
                     break;
                 Thread.Sleep(100);
             }
@@ -113,7 +207,7 @@ namespace CsSamples
                     break;
                 if (control.Landing(tar_pos, tar_altitude, rcs_layout, 5d, heading))
                     break;
-                if (!control.Execute())
+                if (control.Execute() == KrpcAutoPilot.Control.Status.FAIL)
                     break;
                 Thread.Sleep(100);
             }
@@ -147,7 +241,7 @@ namespace CsSamples
                     break;
                 if (control.Hover(tar_altitude, tar_pos, rcs_layout))
                     break;
-                if (!control.Execute())
+                if (control.Execute() == KrpcAutoPilot.Control.Status.FAIL)
                     break;
                 Thread.Sleep(100);
             }

@@ -36,13 +36,13 @@ namespace KrpcAutoPilot
             Command.SetThrottle(throttle);
             //Conn.Drawing().Clear();
             //Conn.Drawing().AddDirection(
-            //    SpaceCenter.TransformDirection(State.Vessel.East.ToTuple(), OrbitBody.ReferenceFrame, ActiveVessel.ReferenceFrame),
+            //    SpaceCenter.TransformDirection(State.Vessel.East.ToTuple(), OrbitBodyFrame, ActiveVessel.ReferenceFrame),
             //    ActiveVessel.ReferenceFrame, 20f);
             //Conn.Drawing().AddDirection(
-            //    SpaceCenter.TransformDirection(State.Vessel.BodyUp.ToTuple(), OrbitBody.ReferenceFrame, ActiveVessel.ReferenceFrame),
+            //    SpaceCenter.TransformDirection(State.Vessel.BodyUp.ToTuple(), OrbitBodyFrame, ActiveVessel.ReferenceFrame),
             //    ActiveVessel.ReferenceFrame, 30f);
             //Conn.Drawing().AddDirection(
-            //    SpaceCenter.TransformDirection(dir.ToTuple(), OrbitBody.ReferenceFrame, ActiveVessel.ReferenceFrame),
+            //    SpaceCenter.TransformDirection(dir.ToTuple(), OrbitBodyFrame, ActiveVessel.ReferenceFrame),
             //    ActiveVessel.ReferenceFrame, 40f);
 
             return State.Orbit.Apoapsis >= tar_apoapsis + CommonData.Body.Radius;
