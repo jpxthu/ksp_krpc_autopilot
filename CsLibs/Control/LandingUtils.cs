@@ -76,9 +76,10 @@ namespace KrpcAutoPilot
 
         private Vector3d TargetPositionCompensate2(Vector3d tar_pos, double tar_altitude)
         {
-            Vector3d dir = State.Vessel.VelocityHorizon;
-            dir = dir.Norm() * Math.Min(2d, dir.Length());
-            double ratio = Math.Clamp((State.Vessel.Altitude - tar_altitude - 2000d) / 200d, 0d, 100d);
+            //Vector3d dir = State.Vessel.VelocityHorizon;
+            //dir = dir.Norm() * Math.Min(2d, dir.Length());
+            Vector3d dir = VectorHorizonPart(tar_pos - State.Vessel.Position).Norm();
+            double ratio = Math.Clamp(Math.Sqrt(Math.Max(0d, State.Vessel.Altitude - tar_altitude - 2000d)), 0d, 100d);
             return tar_pos + dir * ratio;
         }
     }

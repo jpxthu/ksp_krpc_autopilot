@@ -25,12 +25,18 @@ namespace KrpcAutoPilot
 
             public void Deinit()
             {
-                UT.Remove();
-                // Body
-                AtmosphereDepth.Remove();
-                GravitationalParameter.Remove();
-                HasAtmosphere.Remove();
-                Radius.Remove();
+                try
+                {
+                    UT.Remove();
+                    // Body
+                    AtmosphereDepth.Remove();
+                    GravitationalParameter.Remove();
+                    HasAtmosphere.Remove();
+                    Radius.Remove();
+                }
+                catch (Exception)
+                {
+                }
             }
 
             public Stream<double> UT { get; private set; }

@@ -83,8 +83,9 @@ namespace CsSamples
 
             vessel.Control.RCS = true;
 
-            //vessel.Control.Brakes = true;
+            vessel.Control.Brakes = true;
             SwitchEngineMode(vessel);
+            Thread.Sleep(1000);
             control.Trajectory.ReCacheAvailableThrust();
             SwitchEngineMode(vessel);
 
@@ -119,7 +120,8 @@ namespace CsSamples
 
             control.DisEngage();
             control.Dispose();
-            //vessel.Control.Brakes = false;
+            vessel.Control.Brakes = false;
+            landing_adjust_burn_status = KrpcAutoPilot.Control.LandingAdjustBurnStatus.ABANDON;
         }
 
         public static void Hover(

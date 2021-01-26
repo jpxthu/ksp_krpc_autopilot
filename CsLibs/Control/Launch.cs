@@ -54,7 +54,12 @@ namespace KrpcAutoPilot
                 Command.SetThrottle(1d);
                 if (State.Orbit.Apoapsis + State.Orbit.Periapsis >= tar_periapsis + launch_apoapsis)
                 {
-                    launch_periapsis_node.Remove();
+                    try
+                    {
+                        launch_periapsis_node.Remove();
+                    }
+                    catch (Exception)
+                    { }
                     return true;
                 }
                 else
@@ -77,12 +82,19 @@ namespace KrpcAutoPilot
 
             if (drift_time < 0d)
             {
-                Node node = ActiveVessel.Control.AddNode(CommonData.UT + State.Orbit.TimeToApoapsis, Convert.ToSingle(dvel_tar));
-                //Command.SetTargetDirection(node.Direction(ActiveVessel.ReferenceFrame));
-                ActiveVessel.AutoPilot.ReferenceFrame = node.ReferenceFrame;
-                Command.SetTargetDirection(State.Vessel.SurfEast);
-                launch_burn_stage = true;
-                launch_periapsis_node = node;
+                try
+                {
+                    Node node = ActiveVessel.Control.AddNode(CommonData.UT + State.Orbit.TimeToApoapsis, Convert.ToSingle(dvel_tar));
+                    //Command.SetTargetDirection(node.Direction(ActiveVessel.ReferenceFrame));
+                    ActiveVessel.AutoPilot.ReferenceFrame = node.ReferenceFrame;
+                    Command.SetTargetDirection(State.Vessel.SurfEast);
+                    launch_burn_stage = true;
+                    launch_periapsis_node = node;
+                }
+                catch
+                {
+                    return true;
+                }
             }
 
             return false;

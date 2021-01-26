@@ -1,14 +1,16 @@
 ﻿using KRPC.Client;
 using KRPC.Client.Services.SpaceCenter;
 using System;
-using System.IO;
-using System.Linq;
 using System.Threading;
 
 namespace KrpcAutoPilot.Utils
 {
     public class Trajectory
     {
+        const double CACHE_ALTITUDE_STEP = 400d;
+        const double CACHE_VELOCITY_STEP = 40d;
+        const double CACHE_VELOCITY_MAX = 4000d;
+
         public struct SimulationData
         {
             public Vector3d pos;
@@ -297,7 +299,7 @@ namespace KrpcAutoPilot.Utils
             cache_.Reset(State, altitude_step, velocity_step, velocity_max, LiftEstimationAngle);
         }
 
-        public void ReCacheAvailableThrust(double altitude_step = 200d)
+        public void ReCacheAvailableThrust(double altitude_step = CACHE_ALTITUDE_STEP)
         {
             cache_.ResetAvailableShrust(altitude_step);
         }
@@ -324,7 +326,7 @@ namespace KrpcAutoPilot.Utils
             //sw_ = new StreamWriter("t.tsv");
             cache_ = new Cache(
                 state, conn, sc, body, vessel,
-                200d, 20d, 5000d, LiftEstimationAngle);
+                CACHE_ALTITUDE_STEP, CACHE_VELOCITY_STEP, CACHE_VELOCITY_MAX, LiftEstimationAngle);
         }
 
         public Trajectory(

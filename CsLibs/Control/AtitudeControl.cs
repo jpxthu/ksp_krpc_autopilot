@@ -17,7 +17,7 @@ namespace KrpcAutoPilot
         {
             atitude_controller_ = new AtitudeController(linear_k, max_act, kp, ki);
             altitude_controller_roll_int_ = 0d;
-            altitude_controller_roll_ki_ = ki;
+            altitude_controller_roll_ki_ = ki * 5d;
         }
 
         private bool AtitudeControlSetRPY(double roll, double pitch, double yaw)
@@ -72,15 +72,16 @@ namespace KrpcAutoPilot
                 Vector3d roll_v = Vector3d.Cross(-State.Vessel.Up, tar_down);
                 double roll_ang = roll_v * State.Vessel.Forward;
                 LinearPlanner.Hover(roll_ang, 1d, roll_torque * 0.6d, roll_torque * 0.6d, out vel, out acc);
+                vel = Math.Clamp(vel, -1d, 1d);
             }
             double vel_err = State.Vessel.AngularVelocity * State.Vessel.Forward - vel;
             double roll = (acc + vel_err * 2d) / roll_torque;
             altitude_controller_roll_int_ = Math.Clamp(altitude_controller_roll_int_ + roll * altitude_controller_roll_ki_, -0.1d, 0.1d);
             roll = Math.Clamp(roll + altitude_controller_roll_int_, -1d, 1d);
 
-            double max_py = Math.Max(0.2d, 1d - Math.Abs(roll));
-            pitch = Math.Clamp(pitch, -max_py, max_py);
-            yaw = Math.Clamp(yaw, -max_py, max_py);
+            //double max_py = Math.Max(0.2d, 1d - Math.Abs(roll));
+            //pitch = Math.Clamp(pitch, -max_py, max_py);
+            //yaw = Math.Clamp(yaw, -max_py, max_py);
             return AtitudeControlSetRPY(roll, pitch, yaw);
         }
     }

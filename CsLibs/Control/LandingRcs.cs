@@ -20,7 +20,6 @@ namespace KrpcAutoPilot
             }
 
             double rcs_force_limit = RcsMaxHorizonForce(rcs_layout);
-            
 
             Vector3d v_err = tar_pos - Trajectory.ImpactPositionWithAction;
             Vector3d tar_acc = v_err / 10d;

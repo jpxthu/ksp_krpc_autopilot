@@ -64,7 +64,7 @@ namespace KrpcAutoPilot
             double dir_error = State.Vessel.Direction * tar_v;
             double tar_t = Math.Clamp(distance / 15000d, 0.2d, 0.6d);
             double tar_t_ratio = Command.Throttle > 0.1d ? 1d :
-                Math.Min(Math.Max(0d, (dir_error - 0.95d) * 20d), Math.Max(0d, 1d - State.Vessel.AngularVelocity.Length() * 20d));
+                Math.Min(Math.Max(0d, (dir_error - 0.95d) * 20d), Math.Max(0d, 1d - State.Vessel.AngularVelocity.Length() * 10d));
             tar_t *= tar_t_ratio;
 
             if (Command.Throttle > 0.1d &&

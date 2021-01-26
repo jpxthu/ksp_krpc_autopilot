@@ -17,7 +17,8 @@ namespace KrpcAutoPilot
             UNAVAILABEL,
             WAITING,
             EXECUTING,
-            FINISHED
+            FINISHED,
+            ABANDON
         }
 
         private const double LANDING_MAX_THROTTLE = 0.95d;
