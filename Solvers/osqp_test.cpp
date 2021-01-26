@@ -8,15 +8,22 @@ int main()
 {
     constexpr double kInfinity = std::numeric_limits<double>::infinity();
     SparseMatrix<double> objective_matrix(2, 2);
-    const Triplet<double> kTripletsP[] = {
+    objective_matrix.insert(0, 0) = 2.0;
+    objective_matrix.insert(1, 0) = 0.5;
+    objective_matrix.insert(0, 1) = 0.5;
+    objective_matrix.insert(1, 1) = 2.0;
+    /*const Triplet<double> kTripletsP[] = {
         {0, 0, 2.0}, {1, 0, 0.5}, {0, 1, 0.5}, {1, 1, 2.0} };
     objective_matrix.setFromTriplets(std::begin(kTripletsP),
-                                     std::end(kTripletsP));
+                                     std::end(kTripletsP));*/
+    auto a = objective_matrix.valuePtr();
 
     SparseMatrix<double> constraint_matrix(1, 2);
-    const Triplet<double> kTripletsA[] = { {0, 0, 1.0} };
+    constraint_matrix.insert(0, 0) = 1.0;
+    /*const Triplet<double> kTripletsA[] = { {0, 0, 1.0} };
     constraint_matrix.setFromTriplets(std::begin(kTripletsA),
-                                      std::end(kTripletsA));
+                                      std::end(kTripletsA));*/
+    auto b = constraint_matrix.valuePtr();
 
     OsqpInstance instance;
     instance.objective_matrix = objective_matrix;
